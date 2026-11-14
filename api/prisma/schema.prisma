@@ -1,0 +1,121 @@
+// Benit Cargo — data model (SQLite for the MVP, swap provider for PostgreSQL in prod)
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+/// Roles: CLIENT | AGENT_GZ | AGENT_LOME | ADMIN
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String?  @unique
+  phone        String?  @unique
+  passwordHash String
+  role         String   @default("CLIENT")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  events        ShipmentEvent[]
+  shipments     Shipment[]      @relation("CreatedShipments")
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  familyId   String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  replacedBy String?
+  createdAt  DateTime  @default(now())
+
+  @@index([familyId])
+  @@index([userId])
+}
+
+/// Mode: SEA | AIR — State: OPEN | CLOSED
+model Container {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  mode        String
+  state       String     @default("OPEN")
+  departureAt DateTime?
+  etaAt       DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  shipments   Shipment[]
+}
+
+/// Status: REGISTERED | LOADING | IN_TRANSIT | ARRIVED | READY | DELIVERED
+model Shipment {
+  id            String          @id @default(cuid())
+  trackingId    String          @unique
+  description   String
+  mode          String
+  status        String          @default("REGISTERED")
+  pieces        Int             @default(1)
+  weightKg      Float
+  volumeCbm     Float
+  priceXof      Int
+  clientName    String
+  clientPhone   String
+  clientEmail   String?
+  containerId   String?
+  container     Container?      @relation(fields: [containerId], references: [id], onDelete: SetNull)
+  createdById   String
+  createdBy     User            @relation("CreatedShipments", fields: [createdById], references: [id])
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  events        ShipmentEvent[]
+  photos        Photo[]
+  notifications Notification[]
+
+  @@index([clientPhone])
+  @@index([clientEmail])
+  @@index([status])
+}
+
+model ShipmentEvent {
+  id          String   @id @default(cuid())
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  status      String
+  location    String
+  note        String?
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([shipmentId])
+}
+
+model Photo {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  fileName   String   @unique
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+}
+
+/// Channel: WHATSAPP — Status: SENT | SIMULATED | FAILED
+model Notification {
+  id         String   @id @default(cuid())
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  channel    String   @default("WHATSAPP")
+  to         String
+  body       String
+  status     String
+  error      String?
+  createdAt  DateTime @default(now())
+}

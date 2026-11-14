@@ -1,0 +1,9 @@
+node_modules
+.env
+*.db
+*.db-journal
+src/generated
+uploads/*
+!uploads/.gitkeep
+dist
+test.db
