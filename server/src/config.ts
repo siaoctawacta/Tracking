@@ -10,7 +10,8 @@ function parseJson<T>(raw: string | undefined): T | null {
     throw new Error('Invalid JSON in environment variable')
   }
 }
-const isProd = env.NODE_ENV === 'production'
+// On Vercel (production and preview deployments) the strict production settings always apply.
+const isProd = env.NODE_ENV === 'production' || env.VERCEL === '1'
 const isTest = env.NODE_ENV === 'test' || !!env.VITEST
 
 function jwtSecret(): string {
@@ -44,6 +45,14 @@ export const config = {
   /** Quality-control photos. In production, point it outside the code folder (e.g. /var/lib/kader-cargo/uploads). */
   uploadDir: env.UPLOAD_DIR || new URL('../uploads/', import.meta.url).pathname,
   maxPhotoBytes: 5 * 1024 * 1024,
+  /** Supabase Storage for QC photos (used when both URL and service-role key are set; local disk otherwise). */
+  supabase: {
+    url: (env.SUPABASE_URL ?? '').replace(/\/+$/, ''),
+    serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY ?? '',
+    bucket: env.SUPABASE_STORAGE_BUCKET || 'photos',
+  },
+  /** Shared secret Vercel Cron sends as "Authorization: Bearer …" to the maintenance route. */
+  cronSecret: env.CRON_SECRET ?? '',
   /** Public URL of the SPA, used for tracking links in WhatsApp messages (omitted when empty). */
   publicWebUrl: (env.PUBLIC_WEB_URL ?? '').replace(/\/+$/, ''),
   /** E-mail (OTP codes, account notices). Without SMTP_HOST, e-mails are simulated (logged). Gmail: smtp.gmail.com + app password. */

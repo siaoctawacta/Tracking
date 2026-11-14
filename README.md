@@ -14,12 +14,13 @@ Charte : **rouge bordeaux `#8B1538` et blanc**, logo avec avion (`brand/`).
 
 ## Démarrage rapide
 
-Prérequis : Node.js ≥ 22.
+Prérequis : Node.js ≥ 22 et PostgreSQL (le plus simple : Docker).
 
 ```bash
-npm run setup   # installe api + web, crée server/.env (secret JWT aléatoire), base SQLite + données de démo
+docker compose up -d   # PostgreSQL local : bases kader_cargo (dev) et kader_cargo_test (tests)
+npm run setup   # installe server + web, crée server/.env (secret JWT aléatoire), migrations + données de démo
 npm run dev     # installe les dépendances manquantes, applique les migrations, puis API :4000 + SPA http://localhost:5173
-npm test        # 42 tests d'intégration de l'API (auth, inscription/OTP, Google, RBAC, CSRF, workflow, alertes)
+npm test        # 47 tests d'intégration de l'API (auth, inscription/OTP, Google, RBAC, CSRF, workflow, alertes, Supabase)
 ```
 
 Après un `git pull`, relancez simplement `npm run dev` : les nouvelles dépendances et migrations sont installées automatiquement (`npm run sync`).
@@ -43,36 +44,44 @@ Numéros de suivi publics de démo : `KC-2026-7KX9QA` (en vol), `KC-2026-R2D4HN`
 ## Architecture
 
 ```
-┌─────────────────────────┐   HTTPS · JSON · cookies HttpOnly   ┌──────────────────────────┐
-│  web/  SPA React 19     │ ──────────────────────────────────▶ │  api/  Express 5 + TS    │
-│  Vite · Tailwind v4     │      /api/v1/*  (+ X-CSRF-Token)     │  Prisma 7 · SQLite (dev) │
-│  servie par CDN         │ ◀────────────────────────────────── │  stateless (JWT)         │
-└─────────────────────────┘                                      └──────────────────────────┘
+┌─────────────────────────┐   HTTPS · JSON · cookies HttpOnly   ┌──────────────────────────┐      ┌──────────────────────┐
+│  web/  SPA React 19     │ ──────────────────────────────────▶ │  server/ Express 5 + TS  │ ───▶ │  Supabase            │
+│  Vite · Tailwind v4     │      /api/v1/*  (+ X-CSRF-Token)     │  Prisma 7 · PostgreSQL   │      │  PostgreSQL + Storage│
+│  Vercel (CDN)           │ ◀────────────────────────────────── │  Vercel (1 fonction)     │      │  (photos, privé)     │
+└─────────────────────────┘                                      └──────────────────────────┘      └──────────────────────┘
 ```
 
 - **Découplage strict** : l'API ne rend aucun HTML (CSP `default-src 'none'`), la SPA ne contient aucune logique métier — prix, numéros de suivi, transitions de statut et droits sont décidés côté serveur.
-- **Base de données** : SQLite pour le MVP ; passer `provider = "postgresql"` dans `server/prisma/schema.prisma` (+ adaptateur `@prisma/adapter-pg`) pour la production.
+- **Données** : PostgreSQL (Supabase en production, Postgres local en développement et pour les tests) ; photos dans Supabase Storage (bucket privé) ou sur le disque en local.
+- **Un seul déploiement Vercel** sert le site et l’API (même adresse, cookies `SameSite=Strict`).
 
 ### Arborescence
 
 ```
-server/
-  prisma/schema.prisma      modèle : User, RefreshToken, Shipment, ShipmentEvent, Container, Photo, Notification
-  prisma/seed.ts            données de démonstration
+server/                     API (Express 5 + TypeScript) — « server » et non « api » : voir le guide technique 6.5
+  prisma/schema.prisma      modèle PostgreSQL : User, Shipment, Container, Photo, Notification, OtpCode, RateLimit…
+  prisma/seed.ts            données de démonstration (jamais en production)
+  scripts/vercel-build.mjs  build Vercel : site + API en une fonction (Build Output API)
+  scripts/create-admin.ts   premier administrateur en production
   src/app.ts                Helmet, CORS, CSRF, routes /api/v1
+  src/vercel.ts             point d’entrée de la fonction Vercel
+  src/db.ts                 connexion PostgreSQL / Supabase (pooler, SSL)
   src/lib/security.ts       Argon2id, JWT, hachage des refresh tokens
-  src/lib/domain.ts         statuts, RBAC des transitions, tarifs, générateur KC-AAAA-XXXXXX
+  src/lib/storage.ts        photos : Supabase Storage (bucket privé) ou disque local
+  src/lib/rateLimitStore.ts limitation de débit partagée (table RateLimit)
   src/lib/whatsapp.ts       alertes WhatsApp à chaque étape (Twilio, Meta Cloud API ou simulé)
-  src/lib/company.ts        coordonnées Kader Cargo (agences, contacts)
   src/lib/pdf.ts            factures A4 et étiquettes 100×150 mm (code-barres + QR)
-  src/routes/*.ts           auth, tracking, shipments, containers, users
-  test/api.test.ts          tests d'intégration (Vitest + Supertest)
-brand/                      logo (SVG vectoriel + PNG), script de génération build-logo.mjs
+  src/routes/*.ts           auth, account, tracking, shipments, containers, users, staffNotifications, cron
+  test/*.test.ts            tests d'intégration (Vitest + Supertest, PostgreSQL de test)
 web/
   src/lib/site.ts           coordonnées affichées sur le site
-  src/pages/                Home, Track, Login, client/*, admin/*
+  src/lib/photos.ts         compression des photos dans le navigateur, envoi une par une
+  src/pages/                Home, Track, Login, Register, client/*, admin/*
   src/lib/api.ts            client HTTP : CSRF en mémoire + rotation silencieuse du refresh token
-  public/_headers           en-têtes de sécurité CDN (CSP, HSTS, X-Frame-Options)
+vercel.json · .vercelignore déploiement Vercel
+docker-compose.yml          PostgreSQL local
+deploy/                     variante serveur dédié (Caddy, systemd, sauvegardes)
+brand/                      logo (SVG vectoriel + PNG), script de génération build-logo.mjs
 ```
 
 ## Fonctionnalités
@@ -169,21 +178,17 @@ Le navigateur interroge l’API toutes les 10 s (`GET /api/v1/staff/notification
 Deux guides PDF à remettre au client :
 
 - **[Guide d’utilisation](docs/Kader-Cargo-Guide-Utilisateur.pdf)** : présentation, guide du client, guide de l’équipe, annexes (lexique, questions fréquentes, contacts).
-- **[Guide technique](docs/Kader-Cargo-Guide-Technique.pdf)** : architecture et code, référence de l’API, sécurité, intégrations, déploiement sur un serveur, exploitation.
+- **[Guide technique](docs/Kader-Cargo-Guide-Technique.pdf)** : architecture et code, référence de l’API, sécurité, intégrations, déploiement Vercel + Supabase, exploitation.
 
-Résumé : un serveur Ubuntu 24.04, Caddy (HTTPS automatique) devant l’API Node.js lancée par systemd, base SQLite et photos dans `/var/lib/kader-cargo`, sauvegarde chaque nuit. Les fichiers prêts à copier sont dans [`deploy/`](deploy/) :
+**Hébergement : Vercel + Supabase** (guide technique, partie 6). `vercel.json` installe `web/` et `server/` puis lance `server/scripts/vercel-build.mjs`, qui produit le site et l’API en une seule fonction Node.js (Build Output API). Les migrations sont appliquées automatiquement aux déploiements de production.
 
-| Fichier | Rôle |
-|---|---|
-| `deploy/Caddyfile` | HTTPS, en-têtes de sécurité, site + proxy `/api` |
-| `deploy/kader-cargo-api.service` | service systemd isolé (redémarrage automatique) |
-| `deploy/env.production.example` | modèle de `server/.env` pour la production |
-| `deploy/update.sh` | mise à jour : sauvegarde, `git pull`, dépendances, migrations, build, redémarrage, vérification |
-| `deploy/backup.sh` · `deploy/cron.kader-cargo` | sauvegarde nocturne (base + photos, 14 jours) |
+1. **Supabase** : créer le projet ; bouton *Connect* → chaîne *Transaction pooler* (`DATABASE_URL`) et *Session pooler* (`DIRECT_URL`) ; *Storage* → bucket privé `photos` ; *Settings → API* → URL du projet et clé `service_role`.
+2. **Vercel** : importer le dépôt (aucun réglage de build à saisir) ; variables d’environnement *Production* : `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `PUBLIC_WEB_URL`, `TRUST_PROXY=1`, puis WhatsApp / SMTP / Google. **Ne pas définir `NODE_ENV`.**
+3. **Premier administrateur** (sans données de démo), depuis un poste : `DATABASE_URL="<Session pooler>" npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com`.
 
-**Site sur Vercel** : `vercel.json` et `.vercelignore` sont prêts. Vercel héberge uniquement le site (`web/`) et transmet `/api/*` à l’API installée sur un serveur (remplacez `https://api.kadercargo.com` dans `vercel.json` par son adresse, et mettez `TRUST_PROXY=2` sur l’API). Vercel ne peut pas héberger l’API elle-même (base SQLite et photos sur disque). Détails : Guide technique, section 6.4.
+**Ne jamais lancer `npm run setup` ni `db:seed` sur la base de production** : ces commandes effacent les données.
 
-Premier administrateur sur un serveur vierge (sans données de démo) : `npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com`. **Ne jamais lancer `npm run setup` ni `db:seed` en production** : ces commandes effacent les données.
+Variante sur un serveur dédié (Caddy + systemd) : fichiers prêts dans [`deploy/`](deploy/), procédure dans le guide technique (section 6.6).
 
 Pour régénérer les PDF après une modification de `docs/guide/` : `node docs/guide/build-pdf.mjs [utilisateur|technique]` (nécessite Playwright, poppler-utils et pypdf).
 

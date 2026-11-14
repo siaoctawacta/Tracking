@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../db'
 import { canSetStatus, computePrice, MODES, newTrackingId, normalizePhone, STAFF_ROLES, STATUSES, statusLabel, STATUS_LOCATION, type Role } from '../lib/domain'
 import { invoicePdf, labelPdf } from '../lib/pdf'
-import { photoPath, photoUpload, storePhoto } from '../lib/uploads'
+import { photoStorage } from '../lib/storage'
+import { photoUpload, storePhoto } from '../lib/uploads'
 import { applyStatus, statusIndex } from '../lib/workflow'
 import { activeProvider, previewStatusAlert, queueStatusAlert, resendAlert } from '../lib/whatsapp'
 import { notifyStaff } from '../lib/staffNotify'
@@ -64,9 +65,9 @@ shipmentsRouter.get('/', requireRole(...STAFF_ROLES), async (req, res) => {
     ...(q.q && {
       OR: [
         { trackingId: { contains: q.q.toUpperCase() } },
-        { clientName: { contains: q.q } },
+        { clientName: { contains: q.q, mode: 'insensitive' as const } },
         { clientPhone: { contains: q.q.replace(/\s/g, '') } },
-        { description: { contains: q.q } },
+        { description: { contains: q.q, mode: 'insensitive' as const } },
       ],
     }),
   }
@@ -229,8 +230,10 @@ shipmentsRouter.get('/:id/photos/:photoId', async (req, res) => {
   const shipment = await loadAccessible(req, req.params.id as string)
   const photo = await prisma.photo.findFirst({ where: { id: req.params.photoId as string, shipmentId: shipment.id } })
   if (!photo) throw new HttpError(404, 'Photo introuvable', 'not_found')
+  const body = await photoStorage().get(photo.fileName)
+  if (!body) throw new HttpError(404, 'Photo introuvable', 'not_found')
   res.set({ 'Cache-Control': 'private, max-age=3600', 'Content-Type': photo.mimeType, 'X-Content-Type-Options': 'nosniff' })
-  res.sendFile(photoPath(photo.fileName))
+  res.send(body)
 })
 
 // ---------- Documents ----------

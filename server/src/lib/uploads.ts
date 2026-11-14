@@ -1,9 +1,8 @@
 import crypto from 'node:crypto'
-import fs from 'node:fs/promises'
-import path from 'node:path'
 import multer from 'multer'
 import { config } from '../config'
 import { HttpError } from '../middleware/errors'
+import { photoStorage } from './storage'
 
 const ALLOWED: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
 
@@ -25,12 +24,6 @@ export async function storePhoto(file: Express.Multer.File) {
   const mime = sniff(file.buffer)
   if (!mime || mime !== file.mimetype) throw new HttpError(400, 'Seules les images JPEG, PNG ou WebP sont acceptées', 'bad_file')
   const fileName = `${crypto.randomUUID()}.${ALLOWED[mime]}`
-  await fs.mkdir(config.uploadDir, { recursive: true })
-  await fs.writeFile(path.join(config.uploadDir, fileName), file.buffer, { mode: 0o600 })
+  await photoStorage().put(fileName, file.buffer, mime)
   return { fileName, mimeType: mime, size: file.size }
-}
-
-export function photoPath(fileName: string) {
-  // fileName comes from our DB (UUID-based), basename() is a belt-and-braces guard against traversal.
-  return path.join(config.uploadDir, path.basename(fileName))
 }

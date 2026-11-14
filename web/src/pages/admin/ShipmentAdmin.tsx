@@ -1,5 +1,6 @@
 import { ImagePlus, MessageCircle, PackageX, Printer, RotateCw } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
+import { uploadPhotos } from '../../lib/photos'
 import { useParams } from 'react-router-dom'
 import { BackLink } from '../../components/AppShell'
 import { WhatsAppIcon } from '../../components/icons'
@@ -102,27 +103,23 @@ function PhotoUpload({ id, onDone }: { id: string; onDone: () => void }) {
   const [files, setFiles] = useState<File[]>([])
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [progress, setProgress] = useState('')
   async function upload() {
     setBusy(true)
     setErr('')
-    const fd = new FormData()
-    files.forEach((f) => fd.append('photos', f))
-    try {
-      await api.post(`/shipments/${id}/photos`, fd)
-      setFiles([])
-      onDone()
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : 'Erreur')
-    } finally {
-      setBusy(false)
-    }
+    const failed = await uploadPhotos(id, files, (done, total) => setProgress(`${done}/${total}`))
+    setBusy(false)
+    setProgress('')
+    if (failed) setErr(`${failed} photo${failed > 1 ? 's' : ''} non envoyée${failed > 1 ? 's' : ''}. Réessayez.`)
+    else setFiles([])
+    onDone()
   }
   return (
     <Card className="p-6">
       <h2 className="flex items-center gap-2 font-semibold text-heading"><ImagePlus className="size-4" /> Ajouter des photos</h2>
       <PhotoPicker files={files} setFiles={setFiles} />
       {err && <div className="mt-3"><Alert>{err}</Alert></div>}
-      {files.length > 0 && <Button onClick={upload} loading={busy} className="mt-3 w-full">Envoyer {files.length} photo{files.length > 1 ? 's' : ''}</Button>}
+      {files.length > 0 && <Button onClick={upload} loading={busy} className="mt-3 w-full">{progress ? `Envoi ${progress}…` : `Envoyer ${files.length} photo${files.length > 1 ? 's' : ''}`}</Button>}
     </Card>
   )
 }

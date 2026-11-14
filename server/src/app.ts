@@ -9,6 +9,7 @@ import { errorHandler, notFound } from './middleware/errors'
 import { accountRouter } from './routes/account'
 import { authRouter } from './routes/auth'
 import { containersRouter } from './routes/containers'
+import { cronRouter } from './routes/cron'
 import { shipmentsRouter } from './routes/shipments'
 import { staffNotificationsRouter } from './routes/staffNotifications'
 import { trackingRouter } from './routes/tracking'
@@ -38,6 +39,7 @@ export function createApp() {
 
   const api = express.Router()
   api.get('/health', (_req, res) => res.json({ ok: true }))
+  api.use('/cron', cronRouter)
   api.use(csrfProtection)
   api.use('/auth', authRouter)
   api.use('/tracking', trackingRouter)

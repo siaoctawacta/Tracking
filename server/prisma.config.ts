@@ -8,7 +8,9 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    // Default lets `prisma generate` run on a fresh clone before server/.env exists.
-    url: process.env.DATABASE_URL ?? 'file:./dev.db',
+    // Migrations need a session connection: with Supabase, DIRECT_URL is the "Session pooler" string
+    // (port 5432) while DATABASE_URL is the "Transaction pooler" used by the app at runtime.
+    // The local default lets `prisma generate` run on a fresh clone before server/.env exists.
+    url: process.env.DIRECT_URL || process.env.DATABASE_URL || 'postgresql://kader:kader@localhost:5432/kader_cargo',
   },
 })

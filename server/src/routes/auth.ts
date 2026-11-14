@@ -1,5 +1,6 @@
 import { Router, type Response } from 'express'
 import rateLimit from 'express-rate-limit'
+import { PostgresStore } from '../lib/rateLimitStore'
 import { z } from 'zod'
 import { config } from '../config'
 import { prisma } from '../db'
@@ -16,6 +17,7 @@ import { HttpError } from '../middleware/errors'
 export const authRouter = Router()
 
 const loginLimiter = rateLimit({
+  store: new PostgresStore('login'),
   windowMs: 15 * 60 * 1000,
   limit: config.loginRateLimit,
   standardHeaders: 'draft-8',
@@ -27,6 +29,7 @@ const loginLimiter = rateLimit({
 // operators put many customers behind one public IP (CGNAT). Per-number limits (cooldown,
 // 5 codes/hour, 5 attempts per code) are enforced in lib/otp.ts.
 const otpLimiter = rateLimit({
+  store: new PostgresStore('otp'),
   windowMs: 15 * 60 * 1000,
   limit: 60,
   standardHeaders: 'draft-8',

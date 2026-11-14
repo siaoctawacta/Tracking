@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
+import { PostgresStore } from '../lib/rateLimitStore'
 import { prisma } from '../db'
 import { statusLabel } from '../lib/domain'
 import { HttpError } from '../middleware/errors'
@@ -7,7 +8,7 @@ import { HttpError } from '../middleware/errors'
 export const trackingRouter = Router()
 
 // Public endpoint: throttle to make tracking-number enumeration impractical.
-trackingRouter.use(rateLimit({ windowMs: 60 * 1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false }))
+trackingRouter.use(rateLimit({ store: new PostgresStore('tracking'), windowMs: 60 * 1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false }))
 
 const TRACKING_RE = /^KC-\d{4}-[A-Z0-9]{4,8}$/
 

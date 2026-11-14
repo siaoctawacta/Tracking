@@ -11,6 +11,7 @@
 import { config } from '../config'
 import { prisma } from '../db'
 import { company } from './company'
+import { isServerless, runInBackground, sleep } from './background'
 import { STATUSES, type Status } from './domain'
 import { notifyStaff } from './staffNotify'
 
@@ -196,8 +197,9 @@ async function sendMeta(to: string, body: string, step: string, vars: string[]):
   return json.messages?.[0]?.id ?? ''
 }
 
-const MAX_ATTEMPTS = 3
-const RETRY_DELAYS_MS = [0, 30_000, 120_000]
+export const MAX_ATTEMPTS = 3
+/** Wait before attempts 1, 2, 3. Shorter on serverless: the retries must fit in one function run (maxDuration). */
+const retryDelays = () => (isServerless() ? [0, 5_000, 20_000] : [0, 30_000, 120_000])
 
 /**
  * Sends one WhatsApp message right away (awaited) — used for verification codes and account
@@ -214,24 +216,48 @@ export async function sendWhatsAppNow(to: string, body: string, key: 'OTP' | 'AC
   return 'SENT'
 }
 
-async function deliver(notificationId: string, vars: TemplateVars, attempt = 1): Promise<void> {
-  const n = await prisma.notification.findUnique({ where: { id: notificationId } })
-  if (!n) return
-  try {
-    const provider = activeProvider()
-    const send = provider === 'meta' ? sendMeta : sendTwilio
-    const providerMessageId = await send(n.to, n.body, n.step ?? '', vars)
-    await prisma.notification.update({ where: { id: n.id }, data: { status: 'SENT', attempts: attempt, sentAt: new Date(), error: null, providerMessageId } })
-  } catch (e) {
-    const error = (e instanceof Error ? e.message : String(e)).slice(0, 300)
-    const last = attempt >= MAX_ATTEMPTS
-    await prisma.notification.update({ where: { id: n.id }, data: { status: last ? 'FAILED' : 'PENDING', attempts: attempt, error } })
-    if (!last) setTimeout(() => void deliver(notificationId, vars, attempt + 1), RETRY_DELAYS_MS[attempt]).unref?.()
-    else {
-      console.error(`[whatsapp] alert ${n.id} failed after ${attempt} attempts: ${error}`)
-      await notifyStaff('WHATSAPP_FAILED', 'Alerte WhatsApp non délivrée', `${n.to} · ${error}`, `/admin/colis/${n.shipmentId}`, ['ADMIN'])
+/**
+ * Delivers a recorded alert, retrying up to MAX_ATTEMPTS times. Runs in the background (see
+ * runInBackground). Anything still PENDING afterwards (e.g. the function was stopped) is picked up
+ * by the maintenance job (retryStuckAlerts).
+ */
+async function deliver(notificationId: string, vars: TemplateVars, firstAttempt = 1): Promise<void> {
+  const delays = retryDelays()
+  for (let attempt = firstAttempt; attempt <= MAX_ATTEMPTS; attempt++) {
+    if (attempt > firstAttempt) await sleep(delays[attempt - 1] ?? 0)
+    const n = await prisma.notification.findUnique({ where: { id: notificationId } })
+    if (!n || n.status === 'SENT') return
+    try {
+      const provider = activeProvider()
+      const send = provider === 'meta' ? sendMeta : sendTwilio
+      const providerMessageId = await send(n.to, n.body, n.step ?? '', vars)
+      await prisma.notification.update({ where: { id: n.id }, data: { status: 'SENT', attempts: attempt, sentAt: new Date(), error: null, providerMessageId } })
+      return
+    } catch (e) {
+      const error = (e instanceof Error ? e.message : String(e)).slice(0, 300)
+      const last = attempt >= MAX_ATTEMPTS
+      await prisma.notification.update({ where: { id: n.id }, data: { status: last ? 'FAILED' : 'PENDING', attempts: attempt, error } })
+      if (last) {
+        console.error(`[whatsapp] alert ${n.id} failed after ${attempt} attempts: ${error}`)
+        await notifyStaff('WHATSAPP_FAILED', 'Alerte WhatsApp non délivrée', `${n.to} · ${error}`, `/admin/colis/${n.shipmentId}`, ['ADMIN'])
+      }
     }
   }
+}
+
+/** Maintenance: re-sends alerts left PENDING for more than 10 minutes (interrupted deliveries). */
+export async function retryStuckAlerts() {
+  if (activeProvider() === 'simulated') return 0
+  const stuck = await prisma.notification.findMany({
+    where: { status: 'PENDING', createdAt: { lt: new Date(Date.now() - 10 * 60_000) }, attempts: { lt: MAX_ATTEMPTS } },
+    include: { shipment: { include: { container: { select: { code: true, etaAt: true } } } } },
+    take: 50,
+  })
+  for (const n of stuck) {
+    const { vars } = composeStatusMessage(n.shipment, (n.step ?? n.shipment.status) as Status)
+    await deliver(n.id, vars, n.attempts + 1)
+  }
+  return stuck.length
 }
 
 async function loadAlertShipment(shipmentId: string) {
@@ -257,7 +283,7 @@ export async function queueStatusAlert(shipmentId: string, status: Status, opts:
     return prisma.notification.create({ data: { shipmentId, step: status, to: s.clientPhone, body, status: 'SIMULATED', attempts: 1, sentAt: new Date() } })
   }
   const n = await prisma.notification.create({ data: { shipmentId, step: status, to: s.clientPhone, body, status: 'PENDING' } })
-  void deliver(n.id, vars) // background: the HTTP request never waits on WhatsApp
+  runInBackground('whatsapp', () => deliver(n.id, vars)) // the HTTP request never waits on WhatsApp
   return n
 }
 
@@ -273,7 +299,7 @@ export async function resendAlert(notificationId: string) {
     return prisma.notification.update({ where: { id: n.id }, data: { status: 'SIMULATED', attempts: { increment: 1 }, sentAt: new Date(), error: null } })
   }
   const updated = await prisma.notification.update({ where: { id: n.id }, data: { status: 'PENDING', error: null } })
-  void deliver(n.id, vars, 1)
+  runInBackground('whatsapp', () => deliver(n.id, vars, 1))
   return updated
 }
 

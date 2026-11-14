@@ -1,11 +1,11 @@
-// Kader Cargo — data model (SQLite for the MVP, swap provider for PostgreSQL in prod)
+// Kader Cargo — data model (PostgreSQL: Supabase in production, local Postgres for development and tests)
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 /// Roles: CLIENT | AGENT_GZ | AGENT_LOME | ADMIN
@@ -173,4 +173,13 @@ model Notification {
   createdAt         DateTime  @default(now())
 
   @@index([shipmentId, step])
+}
+
+/// Request counters for rate limiting, shared by every API instance (serverless-safe).
+model RateLimit {
+  key     String   @id
+  hits    Int
+  resetAt DateTime
+
+  @@index([resetAt])
 }

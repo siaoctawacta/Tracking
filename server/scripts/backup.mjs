@@ -1,15 +1,23 @@
-// Consistent online backup of the SQLite database (safe while the API is running).
-//   node scripts/backup.mjs /var/backups/kader-cargo/kader-2026-11-14.db
+// PostgreSQL backup (custom format, restorable with pg_restore). Needs the pg_dump client tool.
+//   node scripts/backup.mjs sauvegarde.dump
+// Uses DIRECT_URL (Supabase "Session pooler" / direct connection) or DATABASE_URL.
 import 'dotenv/config'
-import Database from 'better-sqlite3'
+import { spawnSync } from 'node:child_process'
 
 const target = process.argv[2]
 if (!target) {
-  console.error('Usage: node scripts/backup.mjs <fichier-de-sauvegarde.db>')
+  console.error('Usage: node scripts/backup.mjs <fichier.dump>')
   process.exit(1)
 }
-const file = (process.env.DATABASE_URL ?? 'file:./dev.db').replace(/^file:/, '')
-const db = new Database(file, { readonly: true, fileMustExist: true })
-await db.backup(target)
-db.close()
+const url = process.env.DIRECT_URL || process.env.DATABASE_URL
+if (!url) {
+  console.error('DIRECT_URL ou DATABASE_URL manquant')
+  process.exit(1)
+}
+const r = spawnSync('pg_dump', ['--format=custom', '--no-owner', '--no-privileges', '--file', target, url], { stdio: 'inherit' })
+if (r.error) {
+  console.error('pg_dump introuvable : installez le client PostgreSQL (apt install postgresql-client)')
+  process.exit(1)
+}
+if (r.status !== 0) process.exit(r.status ?? 1)
 console.log(`Base sauvegardée → ${target}`)
