@@ -5,18 +5,34 @@
 
 @theme {
   --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
-  --color-canvas: #f8fafc;
+  /* Serif used only for the KADER CARGO wordmark (matches the printed brand identity). */
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+  /* Kader Cargo charter: bordeaux red + white. */
+  --color-canvas: #fbf8f9;
   --color-surface: #ffffff;
-  --color-ink: #1e293b;
-  /* navy = strongest text colour (flips in dark mode); deep = brand navy surfaces (stays dark). */
-  --color-navy: #121e31;
-  --color-deep: #121e31;
-  --color-deep-800: #1b2a42;
-  --color-electric: #1e90ff;
-  --color-electric-600: #0b7be6;
-  --color-electric-50: #eef6ff;
-  --color-line: #e2e8f0;
-  --color-muted: #64748b;
+  --color-ink: #2a2225;
+  /* heading = strongest text colour (flips in dark mode); deep = bordeaux panels (stay dark). */
+  --color-heading: #2b0c16;
+  --color-deep: #6e1030;
+  --color-deep-800: #5a0d27;
+  --color-brand: #8b1538;
+  --color-brand-600: #74112f;
+  --color-brand-50: #fbeff3;
+  --color-line: #eee5e8;
+  --color-muted: #7a6a70;
+
+  /* Warm neutrals that sit well next to bordeaux (re-pointed slate scale). */
+  --color-slate-50: #faf7f8;
+  --color-slate-100: #f4eff1;
+  --color-slate-200: #e9e1e4;
+  --color-slate-300: #d8cdd1;
+  --color-slate-400: #ab9ca2;
+  --color-slate-500: #7d6d73;
+  --color-slate-600: #5d5054;
+  --color-slate-700: #463b3f;
+  --color-slate-800: #2c2427;
+  --color-slate-900: #1d1719;
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --animate-fade-up: fade-up 0.6s var(--ease-out-soft) both;
   --animate-travel: travel 4.5s ease-in-out infinite;
@@ -34,31 +50,33 @@
 
 /*
  * Dark palette: the semantic tokens and the neutral/pastel scales are re-pointed, so every
- * component (bg-surface, text-navy, border-line, bg-slate-100, bg-emerald-50…) adapts without
+ * component (bg-surface, text-heading, border-line, bg-slate-100, bg-emerald-50…) adapts without
  * per-component dark: variants.
  */
 .dark {
   color-scheme: dark;
-  --color-canvas: #0b1220;
-  --color-surface: #111a2b;
-  --color-ink: #dbe3ee;
-  --color-navy: #f1f5f9;
-  --color-deep: #1c2c48;
-  --color-deep-800: #26395a;
-  --color-line: #1f2b3f;
-  --color-muted: #8d9bb0;
-  --color-electric-50: #0f2440;
+  --color-canvas: #140b0e;
+  --color-surface: #1e1216;
+  --color-ink: #eadde1;
+  --color-heading: #faf1f4;
+  --color-deep: #4a0f22;
+  --color-deep-800: #5e142c;
+  --color-line: #33212a;
+  --color-muted: #a8959c;
+  --color-brand: #c23a64;
+  --color-brand-600: #d24c75;
+  --color-brand-50: #3a1421;
 
-  --color-slate-50: #0f1829;
-  --color-slate-100: #172235;
-  --color-slate-200: #223047;
-  --color-slate-300: #34435d;
-  --color-slate-400: #6b7a93;
-  --color-slate-500: #8b98ad;
-  --color-slate-600: #a5b1c2;
-  --color-slate-700: #cbd5e1;
-  --color-slate-800: #e2e8f0;
-  --color-slate-900: #f1f5f9;
+  --color-slate-50: #1a1013;
+  --color-slate-100: #24171c;
+  --color-slate-200: #302027;
+  --color-slate-300: #44303a;
+  --color-slate-400: #7d6a72;
+  --color-slate-500: #9a8790;
+  --color-slate-600: #b5a4ab;
+  --color-slate-700: #d4c6cb;
+  --color-slate-800: #eadfe3;
+  --color-slate-900: #f7eff2;
 
   --color-amber-50: #2a2112;
   --color-amber-700: #fbbf24;
@@ -66,7 +84,7 @@
   --color-emerald-100: #134030;
   --color-emerald-200: #1a5440;
   --color-emerald-700: #34d399;
-  --color-indigo-50: #1b1f3d;
+  --color-indigo-50: #1d1b3a;
   --color-indigo-700: #a5b4fc;
   --color-rose-50: #2d1520;
   --color-rose-100: #4a1d2c;
@@ -83,8 +101,8 @@
     @apply bg-canvas text-ink font-sans antialiased;
     font-feature-settings: 'ss01', 'cv11';
   }
-  ::selection { @apply bg-electric/20; }
-  :focus-visible { @apply outline-2 outline-offset-2 outline-electric; }
+  ::selection { @apply bg-brand/20; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-brand; }
 }
 
 @media (prefers-reduced-motion: reduce) {

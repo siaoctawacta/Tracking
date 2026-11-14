@@ -1,4 +1,5 @@
 import '@fontsource-variable/plus-jakarta-sans'
+import '@fontsource/playfair-display/latin-800.css'
 import './index.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'

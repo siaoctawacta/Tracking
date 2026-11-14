@@ -3,12 +3,14 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import { config } from './config'
-import { authenticate } from './middleware/auth'
+import { authenticate, requireRole } from './middleware/auth'
 import { csrfProtection } from './middleware/csrf'
 import { errorHandler, notFound } from './middleware/errors'
+import { accountRouter } from './routes/account'
 import { authRouter } from './routes/auth'
 import { containersRouter } from './routes/containers'
 import { shipmentsRouter } from './routes/shipments'
+import { staffNotificationsRouter } from './routes/staffNotifications'
 import { trackingRouter } from './routes/tracking'
 import { usersRouter } from './routes/users'
 
@@ -42,6 +44,8 @@ export function createApp() {
   api.use('/shipments', authenticate, shipmentsRouter)
   api.use('/containers', authenticate, containersRouter)
   api.use('/users', authenticate, usersRouter)
+  api.use('/account', authenticate, accountRouter)
+  api.use('/staff/notifications', authenticate, requireRole('AGENT_GZ', 'AGENT_LOME', 'ADMIN'), staffNotificationsRouter)
 
   app.use('/api/v1', api)
   app.use(notFound)

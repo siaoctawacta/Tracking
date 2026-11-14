@@ -2,6 +2,8 @@ export type Role = 'CLIENT' | 'AGENT_GZ' | 'AGENT_LOME' | 'ADMIN'
 export type Mode = 'SEA' | 'AIR'
 export type Status = 'REGISTERED' | 'LOADING' | 'IN_TRANSIT' | 'ARRIVED' | 'READY' | 'DELIVERED'
 
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
 export interface User {
   id: string
   name: string
@@ -10,6 +12,42 @@ export interface User {
   role: Role
   active?: boolean
   createdAt?: string
+  // admin view
+  approvalStatus?: ApprovalStatus
+  signupMethod?: 'PHONE' | 'EMAIL' | 'GOOGLE' | 'ADMIN' | null
+  phoneVerified?: boolean
+  emailVerified?: boolean
+  google?: boolean
+}
+
+export interface AccountView {
+  user: User
+  methods: {
+    phone: { value: string; verifiedAt: string | null } | null
+    email: { value: string; verifiedAt: string | null } | null
+    google: boolean
+    password: boolean
+  }
+  googleClientId: string | null
+}
+
+/** Response of the code-sending endpoints. `devCode` only exists in demo mode (no WhatsApp/SMTP configured). */
+export interface OtpSent {
+  channel: 'WHATSAPP' | 'EMAIL'
+  destination: string
+  devCode?: string
+}
+
+export type StaffNotificationType = 'ACCOUNT_PENDING' | 'CONTAINER_DEPARTED' | 'CONTAINER_ARRIVED' | 'SHIPMENT_ARRIVED' | 'WHATSAPP_FAILED'
+
+export interface StaffNotification {
+  id: string
+  type: StaffNotificationType
+  title: string
+  body: string
+  link: string | null
+  createdAt: string
+  unread: boolean
 }
 
 export interface TimelineEvent {
@@ -60,9 +98,13 @@ export interface Container {
 
 export interface Notification {
   id: string
+  step: Status | null
   to: string
   body: string
-  status: 'SENT' | 'SIMULATED' | 'FAILED'
+  status: 'PENDING' | 'SENT' | 'SIMULATED' | 'FAILED'
+  error: string | null
+  attempts: number
+  sentAt: string | null
   createdAt: string
 }
 

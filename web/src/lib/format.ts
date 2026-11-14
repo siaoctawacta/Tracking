@@ -50,9 +50,9 @@ export function relative(d: string | Date) {
   return rtf.format(-Math.round(diff / 86400), 'day')
 }
 
-export const TRACKING_RE = /^BC-\d{4}-[A-Z0-9]{4,8}$/
+export const TRACKING_RE = /^KC-\d{4}-[A-Z0-9]{4,8}$/
 
 export function normalizeTracking(input: string) {
   const v = input.trim().toUpperCase().replace(/\s+/g, '')
-  return /^\d{4}-/.test(v) ? `BC-${v}` : v
+  return /^\d{4}-/.test(v) ? `KC-${v}` : v
 }

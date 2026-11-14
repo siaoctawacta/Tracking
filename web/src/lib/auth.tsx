@@ -6,6 +6,8 @@ interface AuthState {
   user: User | null
   loading: boolean
   login: (identifier: string, password: string) => Promise<User>
+  /** Registers a session opened by another flow (code, Google, sign-up). */
+  signedIn: (user: User) => void
   logout: () => Promise<void>
 }
 
@@ -32,12 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return r.user
   }, [])
 
+  const signedIn = useCallback((u: User) => setUser(u), [])
+
   const logout = useCallback(async () => {
     await api.post('/auth/logout').catch(() => undefined)
     setUser(null)
   }, [])
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading, login, logout])
+  const value = useMemo(() => ({ user, loading, login, signedIn, logout }), [user, loading, login, signedIn, logout])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

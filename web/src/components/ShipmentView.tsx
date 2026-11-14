@@ -23,7 +23,7 @@ export function ShipmentView({ s, actions, aside, staff = false }: { s: Shipment
         <div className="flex flex-col gap-5 border-b border-line p-6 md:flex-row md:items-center md:justify-between md:p-7">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-wide text-navy">{s.trackingId}</h1>
+              <h1 className="text-2xl font-bold tracking-wide text-heading">{s.trackingId}</h1>
               <StatusBadge status={s.status} label={s.statusLabel} />
             </div>
             <p className="mt-1.5 flex items-center gap-2 text-sm text-muted"><ModeIcon mode={s.mode} /> {modeLabel(s.mode)} · {s.description}</p>
@@ -39,9 +39,9 @@ export function ShipmentView({ s, actions, aside, staff = false }: { s: Shipment
       <div className="grid gap-5 lg:grid-cols-[1fr_1.25fr]">
         <div className="space-y-5">
           <Card className="p-6">
-            <h2 className="font-semibold text-navy">Récapitulatif</h2>
+            <h2 className="font-semibold text-heading">Récapitulatif</h2>
             <dl className="mt-4 divide-y divide-line text-sm">
-              <Row k="Montant" v={<span className="font-bold text-navy">{fcfa(s.priceXof)}</span>} />
+              <Row k="Montant" v={<span className="font-bold text-heading">{fcfa(s.priceXof)}</span>} />
               <Row k="Colis" v={`${s.pieces}`} />
               <Row k="Poids" v={`${num(s.weightKg)} kg`} />
               <Row k="Volume" v={`${num(s.volumeCbm, 3)} m³`} />
@@ -55,7 +55,7 @@ export function ShipmentView({ s, actions, aside, staff = false }: { s: Shipment
 
           <Card className="p-6">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-navy">Photos de contrôle</h2>
+              <h2 className="font-semibold text-heading">Photos de contrôle</h2>
               <span className="text-xs text-muted">{s.photos?.length ?? 0} photo{(s.photos?.length ?? 0) > 1 ? 's' : ''}</span>
             </div>
             {s.photos?.length ? (
@@ -75,7 +75,7 @@ export function ShipmentView({ s, actions, aside, staff = false }: { s: Shipment
         </div>
 
         <Card className="self-start p-6">
-          <h2 className="font-semibold text-navy">Historique</h2>
+          <h2 className="font-semibold text-heading">Historique</h2>
           <div className="mt-6"><EventHistory events={s.events ?? []} showAuthor={staff} /></div>
         </Card>
       </div>

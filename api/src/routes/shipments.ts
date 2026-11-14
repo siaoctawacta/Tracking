@@ -5,7 +5,8 @@ import { canSetStatus, computePrice, MODES, newTrackingId, normalizePhone, STAFF
 import { invoicePdf, labelPdf } from '../lib/pdf'
 import { photoPath, photoUpload, storePhoto } from '../lib/uploads'
 import { applyStatus, statusIndex } from '../lib/workflow'
-import { notifyStatusChange } from '../lib/whatsapp'
+import { activeProvider, previewStatusAlert, queueStatusAlert, resendAlert } from '../lib/whatsapp'
+import { notifyStaff } from '../lib/staffNotify'
 import { requireRole } from '../middleware/auth'
 import { HttpError } from '../middleware/errors'
 
@@ -165,7 +166,7 @@ shipmentsRouter.post('/', requireRole('AGENT_GZ', 'ADMIN'), photoUpload.array('p
       photos: { create: stored },
     },
   })
-  if (body.notify !== 'false') await notifyStatusChange(shipment, 'REGISTERED')
+  if (body.notify !== 'false') await queueStatusAlert(shipment.id, 'REGISTERED')
   res.status(201).json({ shipment: withLabels(shipment) })
 })
 
@@ -188,7 +189,28 @@ shipmentsRouter.patch('/:id/status', requireRole(...STAFF_ROLES), async (req, re
     throw new HttpError(409, 'Le statut ne peut qu’avancer dans la chaîne logistique', 'status_backwards')
   }
   const updated = await applyStatus(shipment.id, body.status, { actorId: req.user!.sub, note: body.note, location: body.location })
+  if (body.status === 'ARRIVED' && statusIndex(shipment.status) < statusIndex('ARRIVED')) {
+    await notifyStaff('SHIPMENT_ARRIVED', `Colis ${updated.trackingId} arrivé à Lomé`, `${updated.clientName} · ${updated.description}`, `/admin/colis/${updated.id}`, ['ADMIN', 'AGENT_GZ'])
+  }
   res.json({ shipment: withLabels(updated) })
+})
+
+// ---------- WhatsApp alerts ----------
+
+const PreviewQuery = z.object({ status: z.enum(STATUSES), note: z.string().trim().max(280).optional() })
+
+/** Exact message the client will receive if the agent validates this step. */
+shipmentsRouter.get('/:id/alert-preview', requireRole(...STAFF_ROLES), async (req, res) => {
+  const q = PreviewQuery.parse(req.query)
+  const shipment = await loadAccessible(req, req.params.id as string)
+  res.json({ body: await previewStatusAlert(shipment.id, q.status, q.note), provider: activeProvider() })
+})
+
+shipmentsRouter.post('/:id/notifications/:notificationId/resend', requireRole(...STAFF_ROLES), async (req, res) => {
+  const shipment = await loadAccessible(req, req.params.id as string)
+  const n = await prisma.notification.findFirst({ where: { id: req.params.notificationId as string, shipmentId: shipment.id } })
+  if (!n) throw new HttpError(404, 'Alerte introuvable', 'not_found')
+  res.json({ notification: await resendAlert(n.id) })
 })
 
 // ---------- Photos ----------

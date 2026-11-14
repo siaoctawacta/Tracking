@@ -6,16 +6,28 @@ export function WhatsAppIcon({ className = 'size-5' }: { className?: string }) {
   )
 }
 
-export function Logo({ light = false }: { light?: boolean }) {
+/** Kader Cargo airplane mark — same geometry as brand/kader-cargo-icon.svg. */
+export function LogoMark({ className = 'size-9', inverted = false }: { className?: string; inverted?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2.5">
-      <svg viewBox="0 0 32 32" className="size-8" aria-hidden="true">
-        <rect width="32" height="32" rx="9" className={light ? 'fill-white' : 'fill-deep'} />
-        <path d="M9 21.5 16 9l7 12.5H9Z" fill="none" stroke="#1E90FF" strokeWidth="2.6" strokeLinejoin="round" />
-        <circle cx="16" cy="18" r="2" className={light ? 'fill-deep' : 'fill-white'} />
-      </svg>
-      <span className={`text-[17px] font-bold tracking-tight ${light ? 'text-white' : 'text-navy'}`}>
-        Benit<span className="text-electric">Cargo</span>
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      <rect width="64" height="64" rx="16" className={inverted ? 'fill-white' : 'fill-brand'} />
+      <path d="M8 50.5C15 51 21 49.2 25.6 45.2" fill="none" className={inverted ? 'stroke-brand' : 'stroke-white'} strokeOpacity=".5" strokeWidth="2.6" strokeLinecap="round" />
+      <path
+        className={inverted ? 'fill-brand' : 'fill-white'}
+        transform="rotate(45 34 30)"
+        d="M34 8c2 0 3.2 2.6 3.2 5.4V24l15.3 8.6c.6.3.9.9.9 1.6v2.2l-16.2-4.6v10.6l4.6 3.6c.3.2.4.6.4.9v2l-7.2-2.2-7.2 2.2v-2c0-.3.2-.7.4-.9l4.6-3.6V31.8l-16.2 4.6v-2.2c0-.7.3-1.3.9-1.6L30.8 24V13.4C30.8 10.6 32 8 34 8z"
+      />
+    </svg>
+  )
+}
+
+export function Logo({ light = false, tagline = false, compact = false }: { light?: boolean; tagline?: boolean; compact?: boolean }) {
+  return (
+    <span className={`inline-flex items-center ${compact ? 'gap-2' : 'gap-2.5'}`}>
+      <LogoMark inverted={light} className={compact ? 'size-8' : 'size-9'} />
+      <span className="leading-none">
+        <span className={`block whitespace-nowrap font-display font-extrabold tracking-[0.06em] ${compact ? 'text-[16px]' : 'text-[19px]'} ${light ? 'text-white' : 'text-brand'}`}>KADER CARGO</span>
+        {tagline && <span className={`mt-1 block text-[9px] font-bold tracking-[0.14em] ${light ? 'text-white/70' : 'text-muted'}`}>EXPRESS AIR CARGO</span>}
       </span>
     </span>
   )

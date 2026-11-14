@@ -6,7 +6,7 @@ import { cx } from './ui'
 const TONE: Record<Status, string> = {
   REGISTERED: 'bg-slate-100 text-slate-700',
   LOADING: 'bg-amber-50 text-amber-700',
-  IN_TRANSIT: 'bg-electric-50 text-electric-600',
+  IN_TRANSIT: 'bg-brand-50 text-brand-600',
   ARRIVED: 'bg-indigo-50 text-indigo-700',
   READY: 'bg-emerald-50 text-emerald-700',
   DELIVERED: 'bg-deep text-white dark:bg-slate-700 dark:text-canvas',
@@ -54,7 +54,7 @@ export function StatusStepper({ status, mode, events = [] }: { status: Status; m
       <div className="relative hidden md:block">
         <div className="absolute inset-x-[8.33%] top-5 h-0.5 rounded bg-line" />
         <div
-          className="absolute left-[8.33%] top-5 h-0.5 rounded bg-electric transition-[width] duration-1000 ease-out-soft"
+          className="absolute left-[8.33%] top-5 h-0.5 rounded bg-brand transition-[width] duration-1000 ease-out-soft"
           style={{ width: `calc(${pct}% * 0.8334)` }}
         />
         <ol className="relative grid grid-cols-6">
@@ -66,15 +66,15 @@ export function StatusStepper({ status, mode, events = [] }: { status: Status; m
                 <span
                   className={cx(
                     'relative grid size-10 place-items-center rounded-full border-2 transition-colors duration-500',
-                    done && 'border-electric bg-electric text-white',
-                    active && 'border-electric bg-surface text-electric shadow-[0_0_0_6px_rgba(30,144,255,0.12)]',
+                    done && 'border-brand bg-brand text-white',
+                    active && 'border-brand bg-surface text-brand shadow-[0_0_0_6px_rgba(139,21,56,0.12)]',
                     !done && !active && 'border-line bg-surface text-slate-300',
                   )}
                 >
                   {done ? <Check className="size-4" strokeWidth={3} /> : stepIcon(s, mode)}
-                  {active && <span className="absolute inset-0 animate-ping rounded-full border-2 border-electric/40" />}
+                  {active && <span className="absolute inset-0 animate-ping rounded-full border-2 border-brand/40" />}
                 </span>
-                <span className={cx('mt-3 text-[13px] font-semibold leading-tight', i <= current ? 'text-navy' : 'text-slate-400')}>{stepLabel(s, mode)}</span>
+                <span className={cx('mt-3 text-[13px] font-semibold leading-tight', i <= current ? 'text-heading' : 'text-slate-400')}>{stepLabel(s, mode)}</span>
                 <span className="mt-1 text-xs text-muted">{i <= current ? dateShort(reachedAt(s)) : ' '}</span>
               </li>
             )
@@ -90,19 +90,19 @@ export function StatusStepper({ status, mode, events = [] }: { status: Status; m
           const last = i === STATUSES.length - 1
           return (
             <li key={s} className="relative flex gap-4 pb-6 last:pb-0">
-              {!last && <span className={cx('absolute left-[17px] top-9 bottom-0 w-0.5', i < current ? 'bg-electric' : 'bg-line')} />}
+              {!last && <span className={cx('absolute left-[17px] top-9 bottom-0 w-0.5', i < current ? 'bg-brand' : 'bg-line')} />}
               <span
                 className={cx(
                   'relative z-10 grid size-9 shrink-0 place-items-center rounded-full border-2',
-                  done && 'border-electric bg-electric text-white',
-                  active && 'border-electric bg-surface text-electric shadow-[0_0_0_5px_rgba(30,144,255,0.12)]',
+                  done && 'border-brand bg-brand text-white',
+                  active && 'border-brand bg-surface text-brand shadow-[0_0_0_5px_rgba(139,21,56,0.12)]',
                   !done && !active && 'border-line bg-surface text-slate-300',
                 )}
               >
                 {done ? <Check className="size-4" strokeWidth={3} /> : stepIcon(s, mode)}
               </span>
               <div className="pt-1.5">
-                <p className={cx('text-sm font-semibold', i <= current ? 'text-navy' : 'text-slate-400')}>{stepLabel(s, mode)}</p>
+                <p className={cx('text-sm font-semibold', i <= current ? 'text-heading' : 'text-slate-400')}>{stepLabel(s, mode)}</p>
                 {i <= current && <p className="text-xs text-muted">{dateShort(reachedAt(s))}</p>}
               </div>
             </li>
@@ -121,10 +121,10 @@ export function EventHistory({ events, showAuthor = false }: { events: TimelineE
       {list.map((e, i) => (
         <li key={e.id ?? i} className="relative flex gap-4 pb-6 last:pb-0">
           {i < list.length - 1 && <span className="absolute left-[5px] top-4 bottom-0 w-px bg-line" />}
-          <span className={cx('relative mt-1.5 size-[11px] shrink-0 rounded-full border-2', i === 0 ? 'border-electric bg-electric' : 'border-slate-300 bg-surface')} />
+          <span className={cx('relative mt-1.5 size-[11px] shrink-0 rounded-full border-2', i === 0 ? 'border-brand bg-brand' : 'border-slate-300 bg-surface')} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-              <p className={cx('text-sm font-semibold', i === 0 ? 'text-navy' : 'text-ink')}>{e.label}</p>
+              <p className={cx('text-sm font-semibold', i === 0 ? 'text-heading' : 'text-ink')}>{e.label}</p>
               <p className="flex items-center gap-1 text-xs text-muted"><Clock3 className="size-3" />{dateTime(e.at ?? e.createdAt)}</p>
             </div>
             <p className="mt-0.5 flex items-center gap-1 text-xs text-muted"><MapPin className="size-3" />{e.location}</p>

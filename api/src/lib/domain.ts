@@ -64,7 +64,7 @@ function randomCode(len: number) {
 }
 
 export function newTrackingId(date = new Date()) {
-  return `BC-${date.getFullYear()}-${randomCode(6)}`
+  return `KC-${date.getFullYear()}-${randomCode(6)}`
 }
 
 export function newContainerCode(mode: Mode, date = new Date()) {

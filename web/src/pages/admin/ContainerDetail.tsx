@@ -55,13 +55,13 @@ export default function ContainerDetail() {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.6fr_1fr]">
         <Card className="overflow-hidden">
-          <div className="border-b border-line px-5 py-4"><h2 className="font-semibold text-navy">Colis du lot</h2></div>
+          <div className="border-b border-line px-5 py-4"><h2 className="font-semibold text-heading">Colis du lot</h2></div>
           {shipments.length === 0 ? <Empty icon={<ScanLine className="size-5" />} title="Lot vide" text="Scannez ou saisissez des numéros de suivi pour les ajouter." /> : (
             <ul className="divide-y divide-line">
               {shipments.map((s) => (
                 <li key={s.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <Link to={`/admin/colis/${s.id}`} className="min-w-0 hover:opacity-80">
-                    <p className="font-semibold tracking-wide text-navy">{s.trackingId}</p>
+                    <p className="font-semibold tracking-wide text-heading">{s.trackingId}</p>
                     <p className="truncate text-xs text-muted">{s.clientName} · {num(s.weightKg)} kg · {num(s.volumeCbm, 3)} m³</p>
                   </Link>
                   <div className="flex items-center gap-2">
@@ -107,10 +107,10 @@ function AddShipments({ id, onDone }: { id: string; onDone: (m: { tone: 'success
   }
   return (
     <Card className="p-6">
-      <h2 className="flex items-center gap-2 font-semibold text-navy"><ScanLine className="size-4" /> Ajouter des colis</h2>
+      <h2 className="flex items-center gap-2 font-semibold text-heading"><ScanLine className="size-4" /> Ajouter des colis</h2>
       <p className="mt-1 text-xs text-muted">Scannez l’étiquette (douchette) ou collez plusieurs numéros.</p>
       <form onSubmit={submit} className="mt-4 space-y-3">
-        <Input name="trackingIds" value={value} onChange={(e) => setValue(e.target.value)} placeholder="BC-2026-…" autoFocus autoComplete="off" />
+        <Input name="trackingIds" value={value} onChange={(e) => setValue(e.target.value)} placeholder="KC-2026-…" autoFocus autoComplete="off" />
         <Button type="submit" loading={busy} className="w-full" disabled={!value.trim()}>Ajouter au lot</Button>
       </form>
     </Card>
@@ -125,14 +125,14 @@ function BulkStatus({ c, onRun, busy }: { c: Container; onRun: (fn: () => Promis
   const [note, setNote] = useState('')
   return (
     <Card className="p-6">
-      <h2 className="font-semibold text-navy">Mise à jour en masse</h2>
+      <h2 className="font-semibold text-heading">Mise à jour en masse</h2>
       <p className="mt-1 text-xs text-muted">Chaque client reçoit une alerte WhatsApp.</p>
       {options.length === 0 ? <p className="mt-4 text-sm text-muted">Aucune étape disponible pour votre rôle.</p> : (
         <div className="mt-4 space-y-3">
           <div className="grid gap-2">
             {options.map((s) => (
-              <label key={s} className={cx('flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm', status === s ? 'border-electric bg-electric-50 font-semibold text-navy' : 'border-line')}>
-                <input type="radio" checked={status === s} onChange={() => setStatus(s)} className="accent-electric" /> {stepLabel(s, c.mode)}
+              <label key={s} className={cx('flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm', status === s ? 'border-brand bg-brand-50 font-semibold text-heading' : 'border-line')}>
+                <input type="radio" checked={status === s} onChange={() => setStatus(s)} className="accent-brand" /> {stepLabel(s, c.mode)}
               </label>
             ))}
           </div>

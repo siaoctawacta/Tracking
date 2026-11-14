@@ -16,7 +16,7 @@ export default function Track() {
   return (
     <div className="mx-auto max-w-5xl px-5 pb-24 pt-10 md:pt-16">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-navy md:text-4xl">Suivi de colis</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-heading md:text-4xl">Suivi de colis</h1>
         <p className="mt-3 text-muted">Saisissez le numéro reçu par WhatsApp lors de la réception à Guangzhou.</p>
         <div className="mt-8">
           <TrackingSearch key={trackingId} initial={trackingId ?? ''} size="md" autoFocus={!trackingId} />
@@ -40,7 +40,7 @@ function Result({ trackingId }: { trackingId: string }) {
           title={notFound ? 'Aucun colis trouvé' : 'Recherche impossible'}
           text={notFound ? `Vérifiez le numéro ${trackingId}. Un colis apparaît ici dès sa réception à notre entrepôt de Guangzhou.` : error.message}
           action={
-            <a href={waLink(`Bonjour, je ne trouve pas mon colis ${trackingId}.`)} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line px-4 text-sm font-semibold text-navy hover:bg-slate-50">
+            <a href={waLink(`Bonjour, je ne trouve pas mon colis ${trackingId}.`)} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line px-4 text-sm font-semibold text-heading hover:bg-slate-50">
               <WhatsAppIcon className="size-4 text-emerald-600" /> Contacter le support
             </a>
           }
@@ -57,7 +57,7 @@ function Result({ trackingId }: { trackingId: string }) {
         <div className="flex flex-col gap-6 border-b border-line p-6 md:flex-row md:items-center md:justify-between md:p-8">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <p className="text-2xl font-bold tracking-wide text-navy">{t.trackingId}</p>
+              <p className="text-2xl font-bold tracking-wide text-heading">{t.trackingId}</p>
               <StatusBadge status={t.status} label={t.statusLabel} />
             </div>
             <p className="mt-2 flex items-center gap-2 text-sm text-muted">
@@ -67,7 +67,7 @@ function Result({ trackingId }: { trackingId: string }) {
           {eta && t.status !== 'DELIVERED' && t.status !== 'READY' && (
             <div className="rounded-2xl bg-canvas px-5 py-3 md:text-right">
               <p className="text-xs font-medium uppercase tracking-wider text-muted">Arrivée estimée</p>
-              <p className="mt-0.5 text-lg font-bold text-navy">{dateLong(eta)}</p>
+              <p className="mt-0.5 text-lg font-bold text-heading">{dateLong(eta)}</p>
             </div>
           )}
         </div>
@@ -78,7 +78,7 @@ function Result({ trackingId }: { trackingId: string }) {
 
       <div className="grid items-start gap-5 md:grid-cols-[1fr_1.3fr]">
         <Card className="p-6 md:p-7">
-          <h2 className="font-semibold text-navy">Détails</h2>
+          <h2 className="font-semibold text-heading">Détails</h2>
           <dl className="mt-5 space-y-4 text-sm">
             <Row icon={<Package className="size-4" />} k="Contenu" v={t.description} />
             <Row icon={<Hash className="size-4" />} k="Colis" v={`${t.pieces} pièce${t.pieces > 1 ? 's' : ''}`} />
@@ -88,15 +88,16 @@ function Result({ trackingId }: { trackingId: string }) {
             <Row icon={<CalendarClock className="size-4" />} k="Réceptionné le" v={dateLong(t.createdAt)} />
           </dl>
           <a
-            href={waLink(`Bonjour Benit Cargo, je souhaite recevoir les alertes WhatsApp pour mon colis ${t.trackingId}.`)}
+            href={waLink(`Bonjour Kader Cargo, j’ai une question sur mon colis ${t.trackingId}.`)}
             target="_blank" rel="noopener noreferrer"
             className="mt-7 flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-500 text-sm font-semibold text-white transition hover:bg-emerald-600"
           >
-            <WhatsAppIcon className="size-4" /> Recevoir les alertes WhatsApp
+            <WhatsAppIcon className="size-4" /> Une question ? Écrivez-nous
           </a>
+          <p className="mt-3 text-center text-xs text-muted">Une alerte WhatsApp est envoyée automatiquement au destinataire à chaque étape.</p>
         </Card>
         <Card className="self-start p-6 md:p-7">
-          <h2 className="font-semibold text-navy">Historique</h2>
+          <h2 className="font-semibold text-heading">Historique</h2>
           <div className="mt-6"><EventHistory events={t.events} /></div>
         </Card>
       </div>

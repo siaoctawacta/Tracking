@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#121E31"/><path d="M9 21.5 16 9l7 12.5H9Z" fill="none" stroke="#1E90FF" stroke-width="2.6" stroke-linejoin="round"/><circle cx="16" cy="18" r="2" fill="#fff"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Kader Cargo">
+  <title>Kader Cargo</title>
+  <rect width="64" height="64" rx="16" fill="#8B1538"/>
+  <path d="M8 50.5C15 51 21 49.2 25.6 45.2" fill="none" stroke="#FFFFFF" stroke-opacity=".5" stroke-width="2.6" stroke-linecap="round"/>
+  <path fill="#FFFFFF" transform="rotate(45 34 30)" d="M34 8c2 0 3.2 2.6 3.2 5.4V24l15.3 8.6c.6.3.9.9.9 1.6v2.2l-16.2-4.6v10.6l4.6 3.6c.3.2.4.6.4.9v2l-7.2-2.2-7.2 2.2v-2c0-.3.2-.7.4-.9l4.6-3.6V31.8l-16.2 4.6v-2.2c0-.7.3-1.3.9-1.6L30.8 24V13.4C30.8 10.6 32 8 34 8z"/>
+</svg>

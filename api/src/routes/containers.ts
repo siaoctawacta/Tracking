@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../db'
 import { canSetStatus, MODES, newContainerCode, STAFF_ROLES, STATUSES, statusLabel } from '../lib/domain'
 import { applyStatus, statusIndex } from '../lib/workflow'
+import { notifyStaff } from '../lib/staffNotify'
 import { requireRole } from '../middleware/auth'
 import { HttpError } from '../middleware/errors'
 
@@ -117,5 +118,15 @@ containersRouter.patch('/:id/status', async (req, res) => {
   const targets = shipments.filter((s) => role === 'ADMIN' ? s.status !== body.status : statusIndex(s.status) < statusIndex(body.status))
   for (const s of targets) await applyStatus(s.id, body.status, { actorId: req.user!.sub, note: body.note, location: body.location })
   if (body.status === 'IN_TRANSIT' && !c.departureAt) await prisma.container.update({ where: { id: c.id }, data: { departureAt: new Date() } })
+  if (targets.length && (body.status === 'IN_TRANSIT' || body.status === 'ARRIVED')) {
+    const air = c.mode === 'AIR'
+    const n = `${targets.length} colis`
+    const eta = c.etaAt ? ` · arrivée prévue le ${c.etaAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}` : ''
+    if (body.status === 'IN_TRANSIT') {
+      await notifyStaff('CONTAINER_DEPARTED', air ? `Le vol ${c.code} a décollé ✈️` : `Le bateau du conteneur ${c.code} est parti 🚢`, `${n} en route vers Lomé${eta}`, `/admin/conteneurs/${c.id}`, ['ADMIN', 'AGENT_LOME'])
+    } else {
+      await notifyStaff('CONTAINER_ARRIVED', air ? `Le vol ${c.code} est arrivé à Lomé 🛬` : `Le bateau est arrivé : conteneur ${c.code} au port de Lomé ⚓`, `${n} à dédouaner et à préparer pour le retrait`, `/admin/conteneurs/${c.id}`, ['ADMIN', 'AGENT_LOME', 'AGENT_GZ'])
+    }
+  }
   res.json({ updated: targets.length, skipped: shipments.length - targets.length })
 })

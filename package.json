@@ -1,15 +1,17 @@
 {
-  "name": "benit-cargo",
+  "name": "kader-cargo",
   "private": true,
-  "description": "Benit Cargo — plateforme de fret & tracking Chine → Togo (SPA React + API REST)",
+  "description": "Kader Cargo — plateforme de fret & tracking Chine → Togo (SPA React + API REST)",
   "scripts": {
     "setup": "node api/scripts/init-env.mjs && npm install && npm --prefix api install && npm --prefix web install && npm --prefix api run db:deploy && npm --prefix api run db:seed",
     "dev": "concurrently -k -n api,web -c blue,cyan \"npm --prefix api run dev\" \"npm --prefix web run dev\"",
     "build": "npm --prefix web run build",
     "test": "npm --prefix api test",
-    "typecheck": "npm --prefix api run typecheck && npm --prefix web exec tsc -b"
+    "typecheck": "npm --prefix api run typecheck && npm --prefix web run typecheck"
   },
   "devDependencies": {
-    "concurrently": "^10.0.7"
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
+    "concurrently": "^10.0.7",
+    "opentype.js": "^2.0.0"
   }
 }

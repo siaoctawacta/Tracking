@@ -1,11 +1,31 @@
 import PDFDocument from 'pdfkit'
 import bwipjs from 'bwip-js'
+import { config } from '../config'
+import { company } from './company'
 import { statusLabel, TARIFFS } from './domain'
 
-const NAVY = '#121E31'
-const BLUE = '#1E90FF'
-const TEXT = '#1E293B'
-const MUTED = '#64748B'
+// Kader Cargo charter: bordeaux + white.
+const BRAND = '#8B1538'
+const BRAND_DARK = '#5C0D24'
+const TEXT = '#2A2225'
+const MUTED = '#7A6A70'
+const LINE = '#EEE5E8'
+const TINT = '#FBEFF3'
+
+const PLANE = 'M34 8c2 0 3.2 2.6 3.2 5.4V24l15.3 8.6c.6.3.9.9.9 1.6v2.2l-16.2-4.6v10.6l4.6 3.6c.3.2.4.6.4.9v2l-7.2-2.2-7.2 2.2v-2c0-.3.2-.7.4-.9l4.6-3.6V31.8l-16.2 4.6v-2.2c0-.7.3-1.3.9-1.6L30.8 24V13.4C30.8 10.6 32 8 34 8z'
+
+/** Airplane mark (same geometry as brand/kader-cargo-icon.svg), `size` pt square. */
+function drawMark(doc: PDFKit.PDFDocument, x: number, y: number, size: number, inverted = false) {
+  const k = size / 64
+  doc.save().translate(x, y).scale(k)
+  doc.roundedRect(0, 0, 64, 64, 16).fill(inverted ? '#FFFFFF' : BRAND)
+  doc.save().rotate(45, { origin: [34, 30] }).path(PLANE).fill(inverted ? BRAND : '#FFFFFF').restore()
+  doc.restore()
+}
+
+function wordmark(doc: PDFKit.PDFDocument, x: number, y: number, size: number, color: string) {
+  doc.fillColor(color).font('Times-Bold').fontSize(size).text('KADER CARGO', x, y, { characterSpacing: size * 0.06, lineBreak: false })
+}
 
 interface InvoiceShipment {
   trackingId: string
@@ -37,19 +57,20 @@ function toBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
 }
 
 export async function invoicePdf(s: InvoiceShipment): Promise<Buffer> {
-  const doc = new PDFDocument({ size: 'A4', margin: 56, info: { Title: `Facture ${s.trackingId}`, Author: 'Benit Cargo' } })
+  const doc = new PDFDocument({ size: 'A4', margin: 56, info: { Title: `Facture ${s.trackingId}`, Author: company.name } })
   const W = doc.page.width - 112
 
-  doc.rect(0, 0, doc.page.width, 6).fill(BLUE)
-  doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(20).text('Benit Cargo', 56, 56)
-  doc.fillColor(MUTED).font('Helvetica').fontSize(9).text('Fret maritime & aérien Chine → Togo', 56, 80)
-  doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(24).text('Facture', 56, 56, { width: W, align: 'right' })
+  doc.rect(0, 0, doc.page.width, 6).fill(BRAND)
+  drawMark(doc, 56, 52, 36)
+  wordmark(doc, 100, 56, 19, BRAND)
+  doc.fillColor(MUTED).font('Helvetica-Bold').fontSize(7).text('EXPRESS AIR CARGO  ·  GUANGZHOU - LOMÉ', 101, 79, { characterSpacing: 1 })
+  doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(24).text('Facture', 56, 52, { width: W, align: 'right' })
   doc.fillColor(MUTED).font('Helvetica').fontSize(9)
     .text(`N° FAC-${s.trackingId.replace('BC-', '')}`, 56, 86, { width: W, align: 'right' })
     .text(`Émise le ${date(s.createdAt)}`, { width: W, align: 'right' })
 
   let y = 140
-  doc.moveTo(56, y).lineTo(56 + W, y).strokeColor('#E2E8F0').lineWidth(1).stroke()
+  doc.moveTo(56, y).lineTo(56 + W, y).strokeColor(LINE).lineWidth(1).stroke()
   y += 20
   const col = (label: string, lines: string[], x: number) => {
     doc.fillColor(MUTED).fontSize(8).font('Helvetica-Bold').text(label.toUpperCase(), x, y, { characterSpacing: 0.8 })
@@ -60,7 +81,7 @@ export async function invoicePdf(s: InvoiceShipment): Promise<Buffer> {
   col('Expédition', [s.trackingId, s.mode === 'AIR' ? 'Fret aérien' : 'Fret maritime', statusLabel(s.status, s.mode)], 56 + W / 2)
 
   y += 90
-  doc.rect(56, y, W, 26).fill('#F1F5F9')
+  doc.rect(56, y, W, 26).fill(TINT)
   doc.fillColor(MUTED).font('Helvetica-Bold').fontSize(8)
   const cols = [56 + 12, 56 + W * 0.45, 56 + W * 0.62, 56 + W * 0.78]
   ;['Désignation', 'Colis', 'Poids / Vol.', 'Montant'].forEach((h, i) =>
@@ -79,16 +100,18 @@ export async function invoicePdf(s: InvoiceShipment): Promise<Buffer> {
   doc.font('Helvetica-Bold').text(xof(s.priceXof), cols[3], y, { width: W * 0.22 - 12, align: 'right' })
 
   y += 60
-  doc.moveTo(56, y).lineTo(56 + W, y).strokeColor('#E2E8F0').stroke()
+  doc.moveTo(56, y).lineTo(56 + W, y).strokeColor(LINE).stroke()
   y += 16
   doc.fillColor(MUTED).font('Helvetica').fontSize(10).text('Total à payer', 56 + W * 0.5, y, { width: W * 0.25 })
-  doc.fillColor(NAVY).font('Helvetica-Bold').fontSize(16).text(xof(s.priceXof), 56 + W * 0.6, y - 3, { width: W * 0.4, align: 'right' })
+  doc.fillColor(BRAND).font('Helvetica-Bold').fontSize(16).text(xof(s.priceXof), 56 + W * 0.6, y - 3, { width: W * 0.4, align: 'right' })
 
   const code = await bwipjs.toBuffer({ bcid: 'code128', text: s.trackingId, scale: 2, height: 9 })
-  doc.image(code, 56, 700, { height: 34 })
+  doc.image(code, 56, 668, { height: 34 })
   doc.fillColor(MUTED).font('Helvetica').fontSize(8)
-    .text('Paiement à l’agence de Lomé ou par Mobile Money avant retrait. Merci de votre confiance.', 56, 750, { width: W })
-    .text('Benit Cargo — Guangzhou · Lomé', 56, 764, { width: W })
+    .text('Paiement à l’agence de Lomé avant retrait. Merci de votre confiance.', 56, 712, { width: W })
+    .text(`Lomé : ${company.lome.contacts.map((c) => `${c.phone} (${c.name})`).join('  ·  ')}`, 56, 728, { width: W })
+    .text(`Guangzhou : ${company.guangzhou.contacts.map((c) => `${c.phone} (${c.name})`).join('  ·  ')}`, 56, 742, { width: W })
+    .text(company.guangzhou.address, 56, 756, { width: W })
   return toBuffer(doc)
 }
 
@@ -99,11 +122,12 @@ export async function labelPdf(s: InvoiceShipment): Promise<Buffer> {
   const W = mm(88)
   const x = mm(6)
 
-  doc.rect(0, 0, mm(100), mm(18)).fill(NAVY)
-  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(14).text('BENIT CARGO', x, mm(6))
-  doc.font('Helvetica').fontSize(8).text(s.mode === 'AIR' ? 'AÉRIEN' : 'MARITIME', x, mm(7), { width: W, align: 'right' })
+  doc.rect(0, 0, mm(100), mm(18)).fill(BRAND)
+  drawMark(doc, x, mm(3.5), mm(11), true)
+  wordmark(doc, x + mm(13.5), mm(6.2), 13, '#FFFFFF')
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(8).text(s.mode === 'AIR' ? 'AÉRIEN EXPRESS' : 'MARITIME', x, mm(7.2), { width: W, align: 'right' })
 
-  doc.fillColor(MUTED).fontSize(7).font('Helvetica-Bold').text('GUANGZHOU  →  LOMÉ', x, mm(23), { characterSpacing: 1 })
+  doc.fillColor(BRAND_DARK).fontSize(7).font('Helvetica-Bold').text('GUANGZHOU  >  LOMÉ', x, mm(23), { characterSpacing: 1 })
   doc.fillColor(TEXT).font('Helvetica-Bold').fontSize(22).text(s.trackingId, x, mm(28), { width: W })
 
   const bar = await bwipjs.toBuffer({ bcid: 'code128', text: s.trackingId, scale: 3, height: 14 })
@@ -124,6 +148,6 @@ export async function labelPdf(s: InvoiceShipment): Promise<Buffer> {
 
   const qr = await bwipjs.toBuffer({ bcid: 'qrcode', text: s.trackingId, scale: 3 })
   doc.image(qr, x + W - mm(16), mm(129), { width: mm(16) })
-  doc.fillColor(MUTED).fontSize(7).text('Suivi : benitcargo.com', x, mm(140))
+  doc.fillColor(MUTED).fontSize(7).text(config.publicWebUrl ? `Suivi : ${config.publicWebUrl.replace(/^https?:\/\//, '')}` : `WhatsApp ${company.whatsapp}`, x, mm(140))
   return toBuffer(doc)
 }
