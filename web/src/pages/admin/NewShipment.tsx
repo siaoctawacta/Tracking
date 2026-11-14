@@ -51,7 +51,7 @@ export default function NewShipment() {
         <p className="mt-3 text-sm text-muted">Montant : <span className="font-semibold text-navy">{fcfa(created.priceXof)}</span></p>
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           <Button variant="dark" onClick={() => api.open(`/shipments/${created.id}/label.pdf`)}><Printer className="size-4" /> Imprimer l’étiquette</Button>
-          <Link to={`/admin/colis/${created.id}`} className="inline-flex h-11 items-center rounded-xl border border-line bg-white px-5 text-sm font-semibold text-ink hover:bg-slate-50">Voir le colis</Link>
+          <Link to={`/admin/colis/${created.id}`} className="inline-flex h-11 items-center rounded-xl border border-line bg-surface px-5 text-sm font-semibold text-ink hover:bg-slate-50">Voir le colis</Link>
           <Button variant="ghost" onClick={() => { setCreated(null); setForm(empty); setFiles([]) }}>Nouvelle réception</Button>
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function NewShipment() {
             <h2 className="font-semibold text-navy">Marchandise</h2>
             <div className="mt-5 grid grid-cols-2 gap-2 rounded-xl bg-canvas p-1">
               {(['SEA', 'AIR'] as const).map((m) => (
-                <button key={m} type="button" onClick={() => setMode(m)} className={cx('flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-semibold transition', mode === m ? 'bg-white text-navy shadow-sm' : 'text-muted hover:text-navy')}>
+                <button key={m} type="button" onClick={() => setMode(m)} className={cx('flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-semibold transition', mode === m ? 'bg-surface text-navy shadow-sm' : 'text-muted hover:text-navy')}>
                   {m === 'AIR' ? <Plane className="size-4" /> : <Ship className="size-4" />}{m === 'AIR' ? 'Aérien' : 'Maritime'}
                 </button>
               ))}
@@ -144,7 +144,7 @@ export function PhotoPicker({ files, setFiles }: { files: File[]; setFiles: (f: 
           {previews.map((u, i) => (
             <div key={u} className="group relative">
               <img src={u} alt="" className="aspect-square w-full rounded-lg object-cover" />
-              <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute -right-1.5 -top-1.5 grid size-5 cursor-pointer place-items-center rounded-full bg-navy text-white opacity-0 transition group-hover:opacity-100" aria-label="Retirer"><X className="size-3" /></button>
+              <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))} className="absolute -right-1.5 -top-1.5 grid size-5 cursor-pointer place-items-center rounded-full bg-deep text-white opacity-0 transition group-hover:opacity-100" aria-label="Retirer"><X className="size-3" /></button>
             </div>
           ))}
         </div>

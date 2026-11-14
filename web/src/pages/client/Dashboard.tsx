@@ -39,7 +39,7 @@ export default function ClientDashboard() {
         <ul className="mt-4 space-y-3">
           {list.map((s, i) => (
             <li key={s.id} className="animate-fade-up" style={{ animationDelay: `${i * 40}ms` }}>
-              <Link to={`/espace/colis/${s.id}`} className="group block rounded-2xl border border-line bg-white p-5 transition hover:border-slate-300 hover:shadow-lg hover:shadow-slate-900/5">
+              <Link to={`/espace/colis/${s.id}`} className="group block rounded-2xl border border-line bg-surface p-5 transition hover:border-slate-300 hover:shadow-lg hover:shadow-black/5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 gap-4">
                     <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-canvas text-navy"><ModeIcon mode={s.mode} className="size-5" /></span>
@@ -79,7 +79,7 @@ function Progress({ status }: { status: Shipment['status'] }) {
 
 function Pill({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: number; highlight?: boolean }) {
   return (
-    <div className={cx('flex items-center gap-4 rounded-2xl border p-5', highlight ? 'border-emerald-200 bg-emerald-50' : 'border-line bg-white')}>
+    <div className={cx('flex items-center gap-4 rounded-2xl border p-5', highlight ? 'border-emerald-200 bg-emerald-50' : 'border-line bg-surface')}>
       <span className={cx('grid size-10 place-items-center rounded-xl', highlight ? 'bg-emerald-500 text-white' : 'bg-electric-50 text-electric')}>{icon}</span>
       <div>
         <p className="text-2xl font-bold text-navy">{value}</p>

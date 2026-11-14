@@ -49,7 +49,7 @@ export default function Shipments() {
       <div className="flex flex-col gap-3 md:flex-row">
         <label className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="N° de suivi, client, téléphone, contenu…" className="h-11 w-full rounded-xl border border-line bg-white pl-10 pr-3 text-sm focus:border-electric focus:outline-none focus:ring-4 focus:ring-electric/15" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="N° de suivi, client, téléphone, contenu…" className="h-11 w-full rounded-xl border border-line bg-surface pl-10 pr-3 text-sm focus:border-electric focus:outline-none focus:ring-4 focus:ring-electric/15" />
         </label>
         <Select value={mode} onChange={(e) => update({ mode: e.target.value || null, page: null })} className="md:w-44" aria-label="Mode">
           <option value="">Tous les modes</option>
@@ -60,7 +60,7 @@ export default function Shipments() {
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
         {['', ...STATUSES].map((s) => (
           <button key={s || 'all'} onClick={() => update({ status: s || null, page: null })}
-            className={cx('shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold transition', status === s ? 'border-navy bg-navy text-white' : 'border-line bg-white text-muted hover:text-navy')}>
+            className={cx('shrink-0 cursor-pointer rounded-full border px-3.5 py-1.5 text-xs font-semibold transition', status === s ? 'border-deep bg-deep text-white' : 'border-line bg-surface text-muted hover:text-navy')}>
             {s ? STATUS_SHORT[s as keyof typeof STATUS_SHORT] : 'Tous'}
           </button>
         ))}
@@ -123,8 +123,8 @@ export default function Shipments() {
       {pages > 1 && (
         <div className="mt-4 flex items-center justify-end gap-2 text-sm">
           <span className="mr-2 text-muted">Page {page} / {pages}</span>
-          <button disabled={page <= 1} onClick={() => update({ page: String(page - 1) })} className="grid size-9 cursor-pointer place-items-center rounded-lg border border-line bg-white disabled:opacity-40" aria-label="Page précédente"><ChevronLeft className="size-4" /></button>
-          <button disabled={page >= pages} onClick={() => update({ page: String(page + 1) })} className="grid size-9 cursor-pointer place-items-center rounded-lg border border-line bg-white disabled:opacity-40" aria-label="Page suivante"><ChevronRight className="size-4" /></button>
+          <button disabled={page <= 1} onClick={() => update({ page: String(page - 1) })} className="grid size-9 cursor-pointer place-items-center rounded-lg border border-line bg-surface disabled:opacity-40" aria-label="Page précédente"><ChevronLeft className="size-4" /></button>
+          <button disabled={page >= pages} onClick={() => update({ page: String(page + 1) })} className="grid size-9 cursor-pointer place-items-center rounded-lg border border-line bg-surface disabled:opacity-40" aria-label="Page suivante"><ChevronRight className="size-4" /></button>
         </div>
       )}
     </>

@@ -4,6 +4,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { ROLE_LABELS } from '../lib/format'
 import { Logo } from './icons'
+import { ThemeToggle } from './ThemeToggle'
 import { cx } from './ui'
 
 export interface NavItem { to: string; label: string; icon: ReactNode; end?: boolean }
@@ -35,10 +36,10 @@ export function UserChip() {
 export function ClientShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-line bg-white/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-line bg-surface/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
           <Link to="/espace"><Logo /></Link>
-          <UserChip />
+          <div className="flex items-center gap-1 sm:gap-2"><ThemeToggle /><UserChip /></div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-5 py-10">{children}</main>
@@ -50,7 +51,7 @@ export function ClientShell({ children }: { children: ReactNode }) {
 export function StaffShell({ nav, children }: { nav: NavItem[]; children: ReactNode }) {
   return (
     <div className="min-h-dvh md:pl-64">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white md:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-surface md:flex">
         <div className="flex h-16 items-center px-6"><Link to="/admin"><Logo /></Link></div>
         <nav className="flex-1 space-y-1 px-3 py-4">
           {nav.map((n) => (
@@ -60,14 +61,17 @@ export function StaffShell({ nav, children }: { nav: NavItem[]; children: ReactN
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line p-4"><UserChip /></div>
+        <div className="space-y-3 border-t border-line p-4">
+          <ThemeToggle withLabel className="w-full justify-start" />
+          <UserChip />
+        </div>
       </aside>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-white/85 px-5 backdrop-blur-xl md:hidden">
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-surface/85 px-5 backdrop-blur-xl md:hidden">
         <Link to="/admin"><Logo /></Link>
-        <UserChip />
+        <div className="flex items-center gap-1"><ThemeToggle /><UserChip /></div>
       </header>
       <main className="mx-auto max-w-6xl px-5 pb-28 pt-8 md:px-10 md:pb-12 md:pt-10">{children}</main>
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-white/95 backdrop-blur md:hidden" style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}>
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-surface/95 backdrop-blur md:hidden" style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}>
         {nav.map((n) => (
           <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium', isActive ? 'text-electric' : 'text-muted')}>
             {n.icon}{n.label}

@@ -25,7 +25,7 @@ export function TrackingSearch({ initial = '', size = 'lg', autoFocus }: { initi
     <form onSubmit={submit} role="search" className="w-full">
       <div
         className={cx(
-          'group flex items-center gap-2 rounded-2xl border bg-white p-1.5 shadow-[0_8px_30px_-12px_rgba(18,30,49,0.18)] transition focus-within:border-electric focus-within:shadow-[0_8px_40px_-12px_rgba(30,144,255,0.35)]',
+          'group flex items-center gap-2 rounded-2xl border bg-surface p-1.5 shadow-[0_8px_30px_-12px_rgba(18,30,49,0.18)] transition focus-within:border-electric focus-within:shadow-[0_8px_40px_-12px_rgba(30,144,255,0.35)]',
           error ? 'border-rose-300' : 'border-line',
         )}
       >
