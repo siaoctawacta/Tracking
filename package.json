@@ -3,7 +3,7 @@
   "private": true,
   "description": "Benit Cargo — plateforme de fret & tracking Chine → Togo (SPA React + API REST)",
   "scripts": {
-    "setup": "npm install && npm --prefix api install && npm --prefix web install && node api/scripts/init-env.mjs && npm --prefix api run db:deploy && npm --prefix api run db:seed",
+    "setup": "node api/scripts/init-env.mjs && npm install && npm --prefix api install && npm --prefix web install && npm --prefix api run db:deploy && npm --prefix api run db:seed",
     "dev": "concurrently -k -n api,web -c blue,cyan \"npm --prefix api run dev\" \"npm --prefix web run dev\"",
     "build": "npm --prefix web run build",
     "test": "npm --prefix api test",
