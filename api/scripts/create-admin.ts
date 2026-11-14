@@ -14,16 +14,29 @@ import { hashPassword } from '../src/lib/security'
 
 const { values } = parseArgs({ options: { name: { type: 'string' }, email: { type: 'string' }, phone: { type: 'string' } } })
 
-function askHidden(question: string): Promise<string> {
-  return new Promise((resolve) => {
-    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true })
-    const write = (rl as unknown as { _writeToOutput: (s: string) => void })
-    const original = write._writeToOutput.bind(rl)
-    let muted = false
-    write._writeToOutput = (s: string) => (muted ? undefined : original(s))
-    rl.question(question, (answer) => { rl.close(); process.stdout.write('\n'); resolve(answer) })
-    muted = true
-  })
+/** Asks questions on one readline interface, without echoing what is typed (passwords). */
+function hiddenPrompt() {
+  const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: process.stdin.isTTY ?? false })
+  const out = rl as unknown as { _writeToOutput: (s: string) => void }
+  const original = out._writeToOutput.bind(rl)
+  let muted = false
+  out._writeToOutput = (s: string) => { if (!muted) original(s) }
+  const lines: string[] = []
+  const waiting: ((l: string) => void)[] = []
+  rl.on('line', (l) => { const w = waiting.shift(); if (w) w(l); else lines.push(l) })
+  return {
+    ask(question: string) {
+      muted = false
+      process.stdout.write(question)
+      muted = true
+      return new Promise<string>((resolve) => {
+        const ready = lines.shift()
+        if (ready !== undefined) { process.stdout.write('\n'); resolve(ready) }
+        else waiting.push((l) => { process.stdout.write('\n'); resolve(l) })
+      })
+    },
+    close: () => rl.close(),
+  }
 }
 
 async function main() {
@@ -36,8 +49,10 @@ async function main() {
   }
   let password = process.env.ADMIN_PASSWORD ?? ''
   if (!password) {
-    password = await askHidden('Mot de passe (10 caractères min.) : ')
-    const again = await askHidden('Confirmez le mot de passe : ')
+    const prompt = hiddenPrompt()
+    password = await prompt.ask('Mot de passe (10 caractères min.) : ')
+    const again = await prompt.ask('Confirmez le mot de passe : ')
+    prompt.close()
     if (password !== again) throw new Error('Les mots de passe ne correspondent pas')
   }
   if (password.length < 10) throw new Error('Mot de passe trop court (10 caractères minimum)')
