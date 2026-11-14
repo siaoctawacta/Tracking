@@ -77,3 +77,14 @@ Variables communes : `{{1}}` = prénom du client, `{{2}}` = numéro de suivi, `{
 **kader_delivered** — `{{3}}` = date de remise
 > 🤝 Colis remis — merci !
 > Bonjour {{1}}, votre colis {{2}} vous a été remis le {{3}}. Merci de votre confiance, à bientôt pour votre prochain envoi depuis Guangzhou !
+
+## Codes de vérification et avis de compte
+
+En plus des alertes de suivi, WhatsApp sert à envoyer :
+
+- **`kader_otp`** — catégorie **Authentification** chez Meta (modèle standard « code de vérification » avec bouton *Copier le code*). `{{1}}` = code à 6 chiffres. Chez Twilio : `TWILIO_CONTENT_SIDS={"OTP":"HX…"}`.
+- **`kader_account`** — catégorie **Utility**, avis de validation du compte. `{{1}}` = titre, `{{2}}` = message.
+  > {{1}}
+  > {{2}}
+
+Les codes envoyés par e-mail utilisent le SMTP configuré (`SMTP_HOST`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`).

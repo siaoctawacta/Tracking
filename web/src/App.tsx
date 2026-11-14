@@ -10,6 +10,8 @@ import Track from './pages/Track'
 
 // Authenticated areas are code-split: the public site stays tiny and instant.
 const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const ClientAccount = lazy(() => import('./pages/client/Account'))
 const ClientDashboard = lazy(() => import('./pages/client/Dashboard'))
 const ClientShipment = lazy(() => import('./pages/client/ShipmentPage'))
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -45,8 +47,10 @@ const router = createBrowserRouter([
     ],
   },
   { path: '/connexion', element: S(<Login />) },
+  { path: '/inscription', element: S(<Register />) },
   { path: '/espace', element: <Guard roles={['CLIENT']}>{S(<ClientDashboard />)}</Guard> },
   { path: '/espace/colis/:id', element: <Guard roles={['CLIENT']}>{S(<ClientShipment />)}</Guard> },
+  { path: '/espace/compte', element: <Guard roles={['CLIENT']}>{S(<ClientAccount />)}</Guard> },
   {
     path: '/admin',
     element: <Guard roles={STAFF}>{S(<AdminLayout />)}</Guard>,

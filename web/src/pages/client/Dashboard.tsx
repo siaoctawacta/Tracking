@@ -1,4 +1,4 @@
-import { ArrowUpRight, Boxes, PackageCheck, Truck } from 'lucide-react'
+import { ArrowUpRight, Boxes, PackageCheck, Truck, UserCog } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ClientShell, PageHeader } from '../../components/AppShell'
 import { ModeIcon, StatusBadge } from '../../components/status'
@@ -19,7 +19,11 @@ export default function ClientDashboard() {
 
   return (
     <ClientShell>
-      <PageHeader title={`Bonjour ${user?.name.split(' ')[0]} 👋`} text="Vos expéditions associées à votre numéro et à votre email." />
+      <PageHeader
+        title={`Bonjour ${user?.name.split(' ')[0]} 👋`}
+        text="Vos expéditions associées à votre numéro et à votre e-mail."
+        actions={<Link to="/espace/compte" className="inline-flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-4 text-sm font-semibold text-heading hover:bg-canvas sm:hidden"><UserCog className="size-4" /> Mon compte</Link>}
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Pill icon={<Truck className="size-4" />} label="En cours" value={active} />

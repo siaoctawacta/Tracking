@@ -21,12 +21,12 @@ export function LogoMark({ className = 'size-9', inverted = false }: { className
   )
 }
 
-export function Logo({ light = false, tagline = false }: { light?: boolean; tagline?: boolean }) {
+export function Logo({ light = false, tagline = false, compact = false }: { light?: boolean; tagline?: boolean; compact?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2.5">
-      <LogoMark inverted={light} />
+    <span className={`inline-flex items-center ${compact ? 'gap-2' : 'gap-2.5'}`}>
+      <LogoMark inverted={light} className={compact ? 'size-8' : 'size-9'} />
       <span className="leading-none">
-        <span className={`block font-display text-[19px] font-extrabold tracking-[0.06em] ${light ? 'text-white' : 'text-brand'}`}>KADER CARGO</span>
+        <span className={`block whitespace-nowrap font-display font-extrabold tracking-[0.06em] ${compact ? 'text-[16px]' : 'text-[19px]'} ${light ? 'text-white' : 'text-brand'}`}>KADER CARGO</span>
         {tagline && <span className={`mt-1 block text-[9px] font-bold tracking-[0.14em] ${light ? 'text-white/70' : 'text-muted'}`}>EXPRESS AIR CARGO</span>}
       </span>
     </span>

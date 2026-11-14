@@ -12,6 +12,7 @@ import { config } from '../config'
 import { prisma } from '../db'
 import { company } from './company'
 import { STATUSES, type Status } from './domain'
+import { notifyStaff } from './staffNotify'
 
 export interface AlertShipment {
   id: string
@@ -146,12 +147,12 @@ export function activeProvider(): Provider {
 
 const digits = (phone: string) => phone.replace(/\D/g, '')
 
-async function sendTwilio(to: string, body: string, step: string, vars: TemplateVars): Promise<string> {
+async function sendTwilio(to: string, body: string, step: string, vars: string[]): Promise<string> {
   const { sid, token, from, contentSids } = config.whatsapp.twilio
   const params = new URLSearchParams({ From: `whatsapp:${from}`, To: `whatsapp:+${digits(to)}` })
   if (contentSids[step]) {
     params.set('ContentSid', contentSids[step])
-    params.set('ContentVariables', JSON.stringify({ 1: vars[0], 2: vars[1], 3: vars[2] }))
+    params.set('ContentVariables', JSON.stringify(Object.fromEntries(vars.map((v, i) => [String(i + 1), v]))))
   } else {
     params.set('Body', body)
   }
@@ -166,7 +167,7 @@ async function sendTwilio(to: string, body: string, step: string, vars: Template
   return json.sid ?? ''
 }
 
-async function sendMeta(to: string, body: string, step: string, vars: TemplateVars): Promise<string> {
+async function sendMeta(to: string, body: string, step: string, vars: string[]): Promise<string> {
   const { token, phoneNumberId, templatePrefix, language } = config.whatsapp.meta
   const payload = templatePrefix
     ? {
@@ -176,7 +177,11 @@ async function sendMeta(to: string, body: string, step: string, vars: TemplateVa
         template: {
           name: `${templatePrefix}${step.toLowerCase()}`,
           language: { code: language },
-          components: [{ type: 'body', parameters: vars.map((text) => ({ type: 'text', text })) }],
+          components: [
+            { type: 'body', parameters: vars.map((text) => ({ type: 'text', text })) },
+            // Authentication templates carry the code in a "copy code" button as well.
+            ...(step === 'OTP' ? [{ type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: vars[0] }] }] : []),
+          ],
         },
       }
     : { messaging_product: 'whatsapp', to: digits(to), type: 'text', text: { body, preview_url: true } }
@@ -194,6 +199,21 @@ async function sendMeta(to: string, body: string, step: string, vars: TemplateVa
 const MAX_ATTEMPTS = 3
 const RETRY_DELAYS_MS = [0, 30_000, 120_000]
 
+/**
+ * Sends one WhatsApp message right away (awaited) — used for verification codes and account
+ * notices, where the caller needs to know whether it went out. `key` selects the approved
+ * template (Twilio content SID map / Meta `${prefix}${key}`).
+ */
+export async function sendWhatsAppNow(to: string, body: string, key: 'OTP' | 'ACCOUNT', vars: string[]): Promise<'SENT' | 'SIMULATED'> {
+  const provider = activeProvider()
+  if (provider === 'simulated') {
+    if (!config.isTest) console.info(`[whatsapp:simulated] → ${to}\n${body}\n`)
+    return 'SIMULATED'
+  }
+  await (provider === 'meta' ? sendMeta : sendTwilio)(to, body, key, vars)
+  return 'SENT'
+}
+
 async function deliver(notificationId: string, vars: TemplateVars, attempt = 1): Promise<void> {
   const n = await prisma.notification.findUnique({ where: { id: notificationId } })
   if (!n) return
@@ -207,7 +227,10 @@ async function deliver(notificationId: string, vars: TemplateVars, attempt = 1):
     const last = attempt >= MAX_ATTEMPTS
     await prisma.notification.update({ where: { id: n.id }, data: { status: last ? 'FAILED' : 'PENDING', attempts: attempt, error } })
     if (!last) setTimeout(() => void deliver(notificationId, vars, attempt + 1), RETRY_DELAYS_MS[attempt]).unref?.()
-    else console.error(`[whatsapp] alert ${n.id} failed after ${attempt} attempts: ${error}`)
+    else {
+      console.error(`[whatsapp] alert ${n.id} failed after ${attempt} attempts: ${error}`)
+      await notifyStaff('WHATSAPP_FAILED', 'Alerte WhatsApp non délivrée', `${n.to} · ${error}`, `/admin/colis/${n.shipmentId}`, ['ADMIN'])
+    }
   }
 }
 

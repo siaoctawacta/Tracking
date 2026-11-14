@@ -7,6 +7,8 @@ const DAY = 86_400_000
 const ago = (days: number) => new Date(Date.now() - days * DAY)
 
 async function main() {
+  await prisma.staffNotification.deleteMany()
+  await prisma.otpCode.deleteMany()
   await prisma.notification.deleteMany()
   await prisma.photo.deleteMany()
   await prisma.shipmentEvent.deleteMany()
@@ -16,7 +18,13 @@ async function main() {
   await prisma.user.deleteMany()
 
   const mk = async (name: string, role: string, email: string | null, phone: string | null, password: string) =>
-    prisma.user.create({ data: { name, role, email, phone, passwordHash: await hashPassword(password) } })
+    prisma.user.create({
+      data: {
+        name, role, email, phone, passwordHash: await hashPassword(password),
+        approvalStatus: 'APPROVED', approvedAt: new Date(), signupMethod: 'ADMIN', notificationsSeenAt: ago(1),
+        emailVerifiedAt: email ? new Date() : null, phoneVerifiedAt: phone ? new Date() : null,
+      },
+    })
 
   const admin = await mk('Kader', 'ADMIN', 'admin@kadercargo.com', null, 'Admin#Kader2026')
   const gz = await mk('Mounkaila', 'AGENT_GZ', 'gz@kadercargo.com', '+8613433988698', 'Guangzhou#2026')
@@ -24,10 +32,21 @@ async function main() {
   await mk('Afi Mensah', 'CLIENT', 'afi.mensah@example.com', '+22890112233', 'Client#2026')
   await mk('Yao Kodjo', 'CLIENT', null, '+22891445566', 'Client#2026')
 
+  // A client who signed up on the website (WhatsApp code verified) and waits for an admin.
+  const pending = await prisma.user.create({
+    data: { name: 'Kossi Amegah', role: 'CLIENT', phone: '+22892334455', phoneVerifiedAt: ago(0.02), approvalStatus: 'PENDING', signupMethod: 'PHONE', createdAt: ago(0.02) },
+  })
+  await prisma.staffNotification.create({
+    data: { type: 'ACCOUNT_PENDING', title: 'Nouveau compte client à valider', body: `${pending.name} · ${pending.phone} (WhatsApp vérifié)`, link: '/admin/utilisateurs?filtre=attente', roles: 'ADMIN', createdAt: ago(0.02) },
+  })
+
   const sea1 = await prisma.container.create({ data: { code: 'CT-2026-K7Q2', mode: 'SEA', state: 'CLOSED', closedAt: ago(30), departureAt: ago(28), etaAt: ago(-6) } })
   const sea2 = await prisma.container.create({ data: { code: 'CT-2026-M4TR', mode: 'SEA', state: 'CLOSED', closedAt: ago(52), departureAt: ago(50), etaAt: ago(8) } })
   const air1 = await prisma.container.create({ data: { code: 'AIR-2026-P9XD', mode: 'AIR', state: 'CLOSED', closedAt: ago(3), departureAt: ago(2), etaAt: ago(-2) } })
   const air2 = await prisma.container.create({ data: { code: 'AIR-2026-H3VW', mode: 'AIR', state: 'CLOSED', closedAt: ago(21), departureAt: ago(20), etaAt: ago(13) } })
+  await prisma.staffNotification.create({
+    data: { type: 'CONTAINER_ARRIVED', title: `Le vol ${air2.code} est arrivé à Lomé 🛬`, body: '2 colis à dédouaner et à préparer pour le retrait', link: `/admin/conteneurs/${air2.id}`, roles: 'ADMIN,AGENT_LOME,AGENT_GZ', createdAt: ago(13) },
+  })
   const open = await prisma.container.create({ data: { code: 'CT-2026-ZB8N', mode: 'SEA', state: 'OPEN', etaAt: ago(-45) } })
 
   type Seed = [string, string, Mode, Status, number, number, number, string, string, string | null, string | null, number]

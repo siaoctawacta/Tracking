@@ -45,6 +45,23 @@ export const config = {
   maxPhotoBytes: 5 * 1024 * 1024,
   /** Public URL of the SPA, used for tracking links in WhatsApp messages (omitted when empty). */
   publicWebUrl: (env.PUBLIC_WEB_URL ?? '').replace(/\/+$/, ''),
+  /** E-mail (OTP codes, account notices). Without SMTP_HOST, e-mails are simulated (logged). Gmail: smtp.gmail.com + app password. */
+  mail: {
+    host: env.SMTP_HOST ?? '',
+    port: Number(env.SMTP_PORT ?? 465),
+    secure: (env.SMTP_SECURE ?? 'true') === 'true',
+    user: env.SMTP_USER ?? '',
+    pass: env.SMTP_PASS ?? '',
+    from: env.MAIL_FROM ?? 'Kader Cargo <no-reply@kadercargo.com>',
+  },
+  /** "Continuer avec Google" — OAuth client ID from Google Cloud Console (disabled when empty). */
+  googleClientId: env.GOOGLE_CLIENT_ID ?? '',
+  otp: {
+    ttlMs: 10 * 60 * 1000,
+    maxAttempts: 5,
+    resendCooldownMs: 60 * 1000,
+    maxPerHour: 5,
+  },
   whatsapp: {
     /** 'twilio' | 'meta' | 'simulated' — auto-detected from the credentials when unset. */
     provider: env.WHATSAPP_PROVIDER ?? '',

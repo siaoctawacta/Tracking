@@ -42,6 +42,7 @@ export function SiteHeader() {
         </nav>
         <div className="hidden items-center gap-2 md:flex">
           <ThemeToggle />
+          {!user && <Link to="/inscription" className="inline-flex h-9 items-center rounded-xl px-3 text-sm font-semibold text-brand transition hover:bg-brand-50">Créer un compte</Link>}
           <Link to={space} className="inline-flex h-9 items-center gap-2 rounded-xl bg-deep px-4 text-sm font-semibold text-white transition hover:bg-deep-800">
             {user ? <LayoutDashboard className="size-4" /> : <LogIn className="size-4" />}
             {user ? 'Mon espace' : 'Connexion'}
@@ -61,6 +62,7 @@ export function SiteHeader() {
             {NAV.map((n) => <a key={n.to} href={n.to} className="py-3 text-base font-medium text-heading">{n.label}</a>)}
           </nav>
           <Link to={space} className="mt-4 flex h-12 items-center justify-center rounded-xl bg-deep font-semibold text-white">{user ? 'Mon espace' : 'Connexion'}</Link>
+          {!user && <Link to="/inscription" className="mt-2 flex h-12 items-center justify-center rounded-xl border border-line font-semibold text-brand">Créer un compte</Link>}
         </div>
       )}
     </header>

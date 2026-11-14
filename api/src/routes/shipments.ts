@@ -6,6 +6,7 @@ import { invoicePdf, labelPdf } from '../lib/pdf'
 import { photoPath, photoUpload, storePhoto } from '../lib/uploads'
 import { applyStatus, statusIndex } from '../lib/workflow'
 import { activeProvider, previewStatusAlert, queueStatusAlert, resendAlert } from '../lib/whatsapp'
+import { notifyStaff } from '../lib/staffNotify'
 import { requireRole } from '../middleware/auth'
 import { HttpError } from '../middleware/errors'
 
@@ -188,6 +189,9 @@ shipmentsRouter.patch('/:id/status', requireRole(...STAFF_ROLES), async (req, re
     throw new HttpError(409, 'Le statut ne peut qu’avancer dans la chaîne logistique', 'status_backwards')
   }
   const updated = await applyStatus(shipment.id, body.status, { actorId: req.user!.sub, note: body.note, location: body.location })
+  if (body.status === 'ARRIVED' && statusIndex(shipment.status) < statusIndex('ARRIVED')) {
+    await notifyStaff('SHIPMENT_ARRIVED', `Colis ${updated.trackingId} arrivé à Lomé`, `${updated.clientName} · ${updated.description}`, `/admin/colis/${updated.id}`, ['ADMIN', 'AGENT_GZ'])
+  }
   res.json({ shipment: withLabels(updated) })
 })
 

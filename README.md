@@ -19,7 +19,7 @@ Prérequis : Node.js ≥ 22.
 ```bash
 npm run setup   # installe api + web, crée api/.env (secret JWT aléatoire), base SQLite + données de démo
 npm run dev     # API sur :4000, SPA sur http://localhost:5173 (proxy /api)
-npm test        # 27 tests d'intégration de l'API (auth, RBAC, CSRF, rate-limit, workflow, alertes WhatsApp)
+npm test        # 42 tests d'intégration de l'API (auth, inscription/OTP, Google, RBAC, CSRF, workflow, alertes)
 ```
 
 ### Comptes de démonstration
@@ -31,6 +31,10 @@ npm test        # 27 tests d'intégration de l'API (auth, RBAC, CSRF, rate-limit
 | Agence Lomé (Moussa) | `lome@kadercargo.com` | `Lome#Agence2026` |
 | Client (Afi Mensah) | `90 11 22 33` | `Client#2026` |
 | Client (Yao Kodjo) | `+228 91 44 55 66` | `Client#2026` |
+
+Un client inscrit via le site attend déjà une validation : **Kossi Amegah** (`+228 92 33 44 55`), visible dans *Utilisateurs → À valider* et dans la cloche de notifications de l’administrateur.
+
+En démo (sans WhatsApp ni SMTP configurés), les codes de vérification s’affichent sur la page dans un encadré « Mode démo » et dans la console de l’API. Cet encadré n’existe jamais en production.
 
 Numéros de suivi publics de démo : `KC-2026-7KX9QA` (en vol), `KC-2026-R2D4HN` (à retirer), `KC-2026-889X` (maritime, en mer).
 
@@ -90,6 +94,32 @@ web/
 
 Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque étape franchie crée un événement daté et envoie au client un message WhatsApp rédigé pour cette étape — voir [docs/whatsapp-alertes.md](docs/whatsapp-alertes.md) (messages, règles, modèles à faire approuver, configuration Twilio / Meta).
 
+## Comptes clients et connexion
+
+- **Inscription** (`/inscription`) avec un numéro WhatsApp **ou** une adresse e-mail (Gmail ou autre) : un code à 6 chiffres est envoyé par WhatsApp ou par e-mail pour prouver que le numéro/l’adresse appartient au client. Mot de passe facultatif.
+- **Validation par l’administrateur** : le compte reste *en attente* tant qu’un admin ne l’a pas validé (*Utilisateurs → À valider*). Le client est prévenu par WhatsApp ou e-mail à la validation (ou au refus, avec un motif facultatif).
+- **Toutes les méthodes de connexion**, liées au même compte : code WhatsApp, code e-mail, mot de passe, « Continuer avec Google ». Depuis *Mon compte*, le client ajoute un téléphone, un e-mail, Google ou un mot de passe ; chaque ajout est vérifié par un code (ou par Google).
+- Un compte Google dont l’adresse Gmail vérifiée correspond à un compte existant y est lié automatiquement.
+- Les identifiants (téléphone, e-mail) ne sont enregistrés qu’une fois prouvés, car ils donnent accès aux colis enregistrés à ce numéro.
+
+Sécurité des codes : 6 chiffres, seul un HMAC est stocké, validité 10 min, 5 essais, 1 envoi par minute et 5 par heure et par destinataire, limite par IP. L’inscription répond de la même façon qu’un compte existe ou non (pas d’énumération des clients).
+
+Configuration : e-mail via SMTP (`SMTP_HOST`… — Gmail : `smtp.gmail.com` + mot de passe d’application), Google via `GOOGLE_CLIENT_ID` (OAuth, Google Cloud Console), WhatsApp : voir [docs/whatsapp-alertes.md](docs/whatsapp-alertes.md) (modèle `kader_otp` de catégorie *Authentification* chez Meta).
+
+## Notifications du back-office
+
+Une cloche (avec compteur) dans le back-office ; à chaque nouvel événement, un **son** est joué, une notification s’affiche à l’écran et — si l’agent l’autorise — une notification du navigateur apparaît quand l’onglet est en arrière-plan. Le son peut être coupé dans le panneau.
+
+| Événement | Qui est notifié |
+|---|---|
+| Nouveau compte client à valider | Administrateurs |
+| Conteneur / vol parti de Guangzhou | Administrateurs, agence Lomé |
+| **Bateau / vol arrivé à Lomé** (mise à jour du lot) | Administrateurs, agences Lomé et Guangzhou |
+| Colis arrivé à Lomé (hors lot) | Administrateurs, entrepôt Guangzhou |
+| Alerte WhatsApp non délivrée après 3 essais | Administrateurs |
+
+Le navigateur interroge l’API toutes les 10 s (`GET /api/v1/staff/notifications?after=…`), ce qui reste compatible avec une API sans état et plusieurs serveurs.
+
 ## API
 
 | Méthode | Endpoint | Accès |
@@ -99,6 +129,12 @@ Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque
 | POST | `/api/v1/auth/refresh` | Cookie refresh — rotation + détection de réutilisation |
 | POST | `/api/v1/auth/logout` | Authentifié — révoque la famille de tokens |
 | GET | `/api/v1/auth/me` · `/auth/session` | Authentifié · sonde sans 401 |
+| POST | `/api/v1/auth/register/start` · `/register/verify` | Public — inscription par code WhatsApp / e-mail |
+| POST | `/api/v1/auth/otp/request` · `/otp/verify` | Public — connexion par code |
+| POST | `/api/v1/auth/google` | Public — « Continuer avec Google » |
+| GET/POST/DELETE | `/api/v1/account` · `/account/link/*` · `/account/password` | Authentifié — moyens de connexion liés |
+| POST | `/api/v1/users/{id}/approval` | Admin — valider / refuser un compte |
+| GET/POST | `/api/v1/staff/notifications` · `/read` | Personnel — cloche de notifications |
 | GET | `/api/v1/tracking/{tracking_id}` | Public, 30 req/min/IP |
 | GET | `/api/v1/shipments` · `/shipments/stats` | Personnel |
 | GET | `/api/v1/shipments/mine` | Client |
@@ -137,4 +173,4 @@ Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque
 
 - Coordonnées : reprises de la carte de visite Kader Cargo dans `web/src/lib/site.ts` (site) et `api/src/lib/company.ts` (messages, PDF). L'adresse précise de l'agence de Lomé n'y figure pas encore.
 - Tarifs : `api/src/lib/domain.ts` (`TARIFFS`) — dupliqués côté SPA pour l'estimateur uniquement (`Home.tsx`, `NewShipment.tsx`).
-- Hors périmètre MVP : inscription client en libre-service (nécessite une vérification OTP du téléphone), paiement Mobile Money, stockage objet (S3) pour les photos, envoi des templates WhatsApp Business approuvés.
+- Hors périmètre MVP : paiement Mobile Money, stockage objet (S3) pour les photos.

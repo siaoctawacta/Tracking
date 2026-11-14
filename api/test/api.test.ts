@@ -35,9 +35,9 @@ const YAO = { identifier: '+22891445566', password: 'Client#2026' }
 
 describe('authentication & sessions', () => {
   it('stores passwords as Argon2id hashes with a per-user salt', async () => {
-    const users = await prisma.user.findMany()
-    for (const u of users) expect(u.passwordHash).toMatch(/^\$argon2id\$v=19\$m=65536,t=3,p=1\$/)
-    const salts = new Set(users.map((u) => u.passwordHash.split('$')[4]))
+    const users = await prisma.user.findMany({ where: { passwordHash: { not: null } } })
+    for (const u of users) expect(u.passwordHash ?? '').toMatch(/^\$argon2id\$v=19\$m=65536,t=3,p=1\$/)
+    const salts = new Set(users.map((u) => (u.passwordHash ?? '').split('$')[4]))
     expect(salts.size).toBe(users.length)
   })
 
