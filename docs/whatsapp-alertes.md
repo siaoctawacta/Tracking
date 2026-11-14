@@ -19,7 +19,7 @@ Règles :
 - Avant de valider une étape, l’agent voit **l’aperçu exact** du message dans le back-office.
 - Envoi en arrière-plan avec **3 tentatives** (immédiate, +30 s, +2 min). Chaque alerte est visible dans la fiche du colis (Envoyé / En cours / Échec / Simulé) avec un bouton **Renvoyer**.
 
-Le texte des messages est dans `api/src/lib/whatsapp.ts` (`composeStatusMessage`).
+Le texte des messages est dans `server/src/lib/whatsapp.ts` (`composeStatusMessage`).
 
 ## Brancher un vrai compte WhatsApp
 

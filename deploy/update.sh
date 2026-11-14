@@ -12,11 +12,11 @@ echo "→ Récupération du code"
 git pull --ff-only origin main
 
 echo "→ Dépendances"
-npm --prefix api ci --no-audit --no-fund
+npm --prefix server ci --no-audit --no-fund
 npm --prefix web ci --no-audit --no-fund
 
 echo "→ Base de données (migrations)"
-(cd api && runuser -u kader -- ./node_modules/.bin/prisma migrate deploy)
+(cd server && runuser -u kader -- ./node_modules/.bin/prisma migrate deploy)
 
 echo "→ Construction du site"
 npm --prefix web run build

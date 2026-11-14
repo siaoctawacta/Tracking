@@ -7,7 +7,7 @@ STAMP=$(date +%Y-%m-%d_%H%M)
 mkdir -p "$DEST"
 chmod 700 "$DEST"
 
-cd /srv/kader-cargo/api
+cd /srv/kader-cargo/server
 node scripts/backup.mjs "$DEST/kader-$STAMP.db"
 tar -czf "$DEST/photos-$STAMP.tar.gz" -C /var/lib/kader-cargo uploads
 find "$DEST" -type f -mtime +14 -delete

@@ -8,7 +8,7 @@ export default defineConfig({
     seed: 'tsx prisma/seed.ts',
   },
   datasource: {
-    // Default lets `prisma generate` run on a fresh clone before api/.env exists.
+    // Default lets `prisma generate` run on a fresh clone before server/.env exists.
     url: process.env.DATABASE_URL ?? 'file:./dev.db',
   },
 })

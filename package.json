@@ -3,13 +3,13 @@
   "private": true,
   "description": "Kader Cargo — plateforme de fret & tracking Chine → Togo (SPA React + API REST)",
   "scripts": {
-    "setup": "node api/scripts/init-env.mjs && npm install && npm --prefix api install && npm --prefix web install && npm --prefix api run db:deploy && npm --prefix api run db:seed",
-    "sync": "node api/scripts/init-env.mjs && npm install --no-audit --no-fund --loglevel=error && npm --prefix api install --no-audit --no-fund --loglevel=error && npm --prefix web install --no-audit --no-fund --loglevel=error && npm --prefix api run db:deploy",
+    "setup": "node server/scripts/init-env.mjs && npm install && npm --prefix server install && npm --prefix web install && npm --prefix server run db:deploy && npm --prefix server run db:seed",
+    "sync": "node server/scripts/init-env.mjs && npm install --no-audit --no-fund --loglevel=error && npm --prefix server install --no-audit --no-fund --loglevel=error && npm --prefix web install --no-audit --no-fund --loglevel=error && npm --prefix server run db:deploy",
     "predev": "npm run sync",
-    "dev": "concurrently -k -n api,web -c blue,cyan \"npm --prefix api run dev\" \"npm --prefix web run dev\"",
+    "dev": "concurrently -k -n api,web -c blue,cyan \"npm --prefix server run dev\" \"npm --prefix web run dev\"",
     "build": "npm --prefix web run build",
-    "test": "npm --prefix api test",
-    "typecheck": "npm --prefix api run typecheck && npm --prefix web run typecheck"
+    "test": "npm --prefix server test",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix web run typecheck"
   },
   "devDependencies": {
     "@fontsource/plus-jakarta-sans": "^5.3.0",

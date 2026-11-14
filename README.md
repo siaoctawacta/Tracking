@@ -17,7 +17,7 @@ Charte : **rouge bordeaux `#8B1538` et blanc**, logo avec avion (`brand/`).
 Prérequis : Node.js ≥ 22.
 
 ```bash
-npm run setup   # installe api + web, crée api/.env (secret JWT aléatoire), base SQLite + données de démo
+npm run setup   # installe api + web, crée server/.env (secret JWT aléatoire), base SQLite + données de démo
 npm run dev     # installe les dépendances manquantes, applique les migrations, puis API :4000 + SPA http://localhost:5173
 npm test        # 42 tests d'intégration de l'API (auth, inscription/OTP, Google, RBAC, CSRF, workflow, alertes)
 ```
@@ -51,12 +51,12 @@ Numéros de suivi publics de démo : `KC-2026-7KX9QA` (en vol), `KC-2026-R2D4HN`
 ```
 
 - **Découplage strict** : l'API ne rend aucun HTML (CSP `default-src 'none'`), la SPA ne contient aucune logique métier — prix, numéros de suivi, transitions de statut et droits sont décidés côté serveur.
-- **Base de données** : SQLite pour le MVP ; passer `provider = "postgresql"` dans `api/prisma/schema.prisma` (+ adaptateur `@prisma/adapter-pg`) pour la production.
+- **Base de données** : SQLite pour le MVP ; passer `provider = "postgresql"` dans `server/prisma/schema.prisma` (+ adaptateur `@prisma/adapter-pg`) pour la production.
 
 ### Arborescence
 
 ```
-api/
+server/
   prisma/schema.prisma      modèle : User, RefreshToken, Shipment, ShipmentEvent, Container, Photo, Notification
   prisma/seed.ts            données de démonstration
   src/app.ts                Helmet, CORS, CSRF, routes /api/v1
@@ -177,18 +177,18 @@ Résumé : un serveur Ubuntu 24.04, Caddy (HTTPS automatique) devant l’API Nod
 |---|---|
 | `deploy/Caddyfile` | HTTPS, en-têtes de sécurité, site + proxy `/api` |
 | `deploy/kader-cargo-api.service` | service systemd isolé (redémarrage automatique) |
-| `deploy/env.production.example` | modèle de `api/.env` pour la production |
+| `deploy/env.production.example` | modèle de `server/.env` pour la production |
 | `deploy/update.sh` | mise à jour : sauvegarde, `git pull`, dépendances, migrations, build, redémarrage, vérification |
 | `deploy/backup.sh` · `deploy/cron.kader-cargo` | sauvegarde nocturne (base + photos, 14 jours) |
 
 **Site sur Vercel** : `vercel.json` et `.vercelignore` sont prêts. Vercel héberge uniquement le site (`web/`) et transmet `/api/*` à l’API installée sur un serveur (remplacez `https://api.kadercargo.com` dans `vercel.json` par son adresse, et mettez `TRUST_PROXY=2` sur l’API). Vercel ne peut pas héberger l’API elle-même (base SQLite et photos sur disque). Détails : Guide technique, section 6.4.
 
-Premier administrateur sur un serveur vierge (sans données de démo) : `npm --prefix api run create-admin -- --name "Kader" --email admin@kadercargo.com`. **Ne jamais lancer `npm run setup` ni `db:seed` en production** : ces commandes effacent les données.
+Premier administrateur sur un serveur vierge (sans données de démo) : `npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com`. **Ne jamais lancer `npm run setup` ni `db:seed` en production** : ces commandes effacent les données.
 
 Pour régénérer les PDF après une modification de `docs/guide/` : `node docs/guide/build-pdf.mjs [utilisateur|technique]` (nécessite Playwright, poppler-utils et pypdf).
 
 ## À compléter avant lancement
 
-- Coordonnées : reprises de la carte de visite Kader Cargo dans `web/src/lib/site.ts` (site) et `api/src/lib/company.ts` (messages, PDF). L'adresse précise de l'agence de Lomé n'y figure pas encore.
-- Tarifs : `api/src/lib/domain.ts` (`TARIFFS`) — dupliqués côté SPA pour l'estimateur uniquement (`Home.tsx`, `NewShipment.tsx`).
+- Coordonnées : reprises de la carte de visite Kader Cargo dans `web/src/lib/site.ts` (site) et `server/src/lib/company.ts` (messages, PDF). L'adresse précise de l'agence de Lomé n'y figure pas encore.
+- Tarifs : `server/src/lib/domain.ts` (`TARIFFS`) — dupliqués côté SPA pour l'estimateur uniquement (`Home.tsx`, `NewShipment.tsx`).
 - Hors périmètre MVP : paiement Mobile Money, stockage objet (S3) pour les photos.

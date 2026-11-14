@@ -41,7 +41,7 @@
   <h2 id="t-12"><span class="n">1.2</span>Pile technologique</h2>
   <div class="grid2">
     <table>
-      <thead><tr><th colspan="2">API — <code style="background:none;color:#fff">api/</code></th></tr></thead>
+      <thead><tr><th colspan="2">API — <code style="background:none;color:#fff">server/</code></th></tr></thead>
       <tr><td>Exécution</td><td>Node.js 22, TypeScript 7 (exécuté par tsx)</td></tr>
       <tr><td>Serveur HTTP</td><td>Express 5, helmet 8, cookie-parser, cors</td></tr>
       <tr><td>Données</td><td>Prisma 7 + adaptateur better-sqlite3 (SQLite)</td></tr>
@@ -65,7 +65,7 @@
 
   <h2 id="t-13"><span class="n">1.3</span>Organisation du dépôt</h2>
   <div class="tree">Tracking/
-├─ api/
+├─ server/
 │  ├─ prisma/schema.prisma      <span class="c"># modèle de données</span>
 │  ├─ prisma/migrations/        <span class="c"># migrations SQL versionnées</span>
 │  ├─ prisma/seed.ts            <span class="c"># données de démonstration (jamais en production)</span>
@@ -108,7 +108,7 @@
     <tr><td><code>ADMIN</code></td><td>Tous</td><td>Peut corriger en arrière : aucune alerte n’est alors envoyée</td></tr>
     <tr><td><code>CLIENT</code></td><td>Aucun</td><td>Lecture de ses propres colis uniquement</td></tr>
   </table>
-  <p>Numéro de suivi : <code>KC-AAAA-XXXXXX</code>, 6 caractères tirés par générateur cryptographique dans un alphabet de 32 signes sans 0/O ni 1/I (plus d’un milliard de combinaisons). Prix calculé par l’API : aérien au kg, maritime au m³, minimum de facturation (<code>api/src/lib/domain.ts</code>).</p>
+  <p>Numéro de suivi : <code>KC-AAAA-XXXXXX</code>, 6 caractères tirés par générateur cryptographique dans un alphabet de 32 signes sans 0/O ni 1/I (plus d’un milliard de combinaisons). Prix calculé par l’API : aérien au kg, maritime au m³, minimum de facturation (<code>server/src/lib/domain.ts</code>).</p>
 </section>
 
 <!-- ========================================================= 2. DÉVELOPPEMENT -->
@@ -122,7 +122,7 @@
 
   <h2 id="t-21"><span class="n">2.1</span>Démarrer en local</h2>
   <pre class="cmd"><span class="p">$ </span>git clone git@github.com:siaoctawacta/Tracking.git &amp;&amp; cd Tracking
-<span class="p">$ </span>npm run setup    <span class="c"># dépendances, api/.env (secret aléatoire), base SQLite + données de démo</span>
+<span class="p">$ </span>npm run setup    <span class="c"># dépendances, server/.env (secret aléatoire), base SQLite + données de démo</span>
 <span class="p">$ </span>npm run dev      <span class="c"># API :4000 + site http://localhost:5173 (proxy /api)</span></pre>
   <p><code>npm run dev</code> commence par <code>npm run sync</code> : il installe les dépendances manquantes et applique les migrations en attente. Après un <code>git pull</code>, relancer <code>npm run dev</code> suffit.</p>
   <table>
@@ -140,16 +140,16 @@
     <tr><td><code>npm run setup</code></td><td>Installation complète + données de démo (<strong>efface la base locale</strong>)</td></tr>
     <tr><td><code>npm run dev</code> · <code>npm run sync</code></td><td>Synchronise dépendances et migrations, puis lance API + site</td></tr>
     <tr><td><code>npm test</code> · <code>npm run typecheck</code> · <code>npm run build</code></td><td>Tests de l’API, vérification TypeScript (api + web), build du site</td></tr>
-    <tr><td><code>npm --prefix api run db:migrate</code></td><td>Crée une migration après modification de <code>schema.prisma</code> (dev)</td></tr>
-    <tr><td><code>npm --prefix api run db:deploy</code></td><td>Applique les migrations en attente (sans perte de données)</td></tr>
-    <tr><td><code>npm --prefix api run db:seed</code></td><td>Réinitialise les données de démo (<strong>efface tout</strong>)</td></tr>
-    <tr><td><code>npm --prefix api run create-admin</code></td><td>Crée ou promeut un administrateur (production)</td></tr>
-    <tr><td><code>npm --prefix api run backup -- fichier.db</code></td><td>Sauvegarde cohérente de la base pendant le fonctionnement</td></tr>
+    <tr><td><code>npm --prefix server run db:migrate</code></td><td>Crée une migration après modification de <code>schema.prisma</code> (dev)</td></tr>
+    <tr><td><code>npm --prefix server run db:deploy</code></td><td>Applique les migrations en attente (sans perte de données)</td></tr>
+    <tr><td><code>npm --prefix server run db:seed</code></td><td>Réinitialise les données de démo (<strong>efface tout</strong>)</td></tr>
+    <tr><td><code>npm --prefix server run create-admin</code></td><td>Crée ou promeut un administrateur (production)</td></tr>
+    <tr><td><code>npm --prefix server run backup -- fichier.db</code></td><td>Sauvegarde cohérente de la base pendant le fonctionnement</td></tr>
     <tr><td><code>node brand/build-logo.mjs</code> · <code>node docs/guide/build-pdf.mjs</code></td><td>Régénère le logo · les guides PDF</td></tr>
   </table>
 
   <h2 id="t-23"><span class="n">2.3</span>Tests</h2>
-  <p>42 tests d’intégration (vitest + supertest) sur une base SQLite jetable (<code>test.db</code>, recréée à chaque lancement), dans <code>api/test/</code> :</p>
+  <p>42 tests d’intégration (vitest + supertest) sur une base SQLite jetable (<code>test.db</code>, recréée à chaque lancement), dans <code>server/test/</code> :</p>
   <ul>
     <li><code>api.test.ts</code> — hachage Argon2id, CSRF, erreur identique utilisateur inconnu / mauvais mot de passe, limitation de connexion, drapeaux des cookies, rotation et réutilisation du refresh token, JWT falsifié, masquage du suivi public, droits par rôle, accès client limité à ses colis, fichiers non-images refusés, flux des lots, création de comptes.</li>
     <li><code>signup.test.ts</code> — inscription par téléphone et par e-mail, codes faux / verrouillage / délai de renvoi, non-divulgation des comptes existants, comptes en attente ou refusés bloqués, validation, liaison téléphone / e-mail / Google / mot de passe, connexion Google (jeton signé localement), flux de notifications et destinataires.</li>
@@ -158,10 +158,10 @@
 
   <h2 id="t-24"><span class="n">2.4</span>Conventions</h2>
   <ul>
-    <li>Toute modification du modèle passe par une migration (<code>db:migrate</code>) versionnée dans <code>api/prisma/migrations/</code>. Après une migration, régénérer le client : <code>npx prisma generate</code> (fait automatiquement par <code>npm install</code>).</li>
+    <li>Toute modification du modèle passe par une migration (<code>db:migrate</code>) versionnée dans <code>server/prisma/migrations/</code>. Après une migration, régénérer le client : <code>npx prisma generate</code> (fait automatiquement par <code>npm install</code>).</li>
     <li>Chaque entrée de l’API est décrite par un schéma zod <code>.strict()</code> : un champ inconnu est refusé (<code>400 validation_error</code>).</li>
     <li>Les erreurs métier passent par <code>HttpError(statut, message, code)</code> ; les messages sont en français, destinés à l’utilisateur.</li>
-    <li>Les coordonnées affichées sont dans <code>web/src/lib/site.ts</code>, celles des messages et PDF dans <code>api/src/lib/company.ts</code>, les tarifs dans <code>api/src/lib/domain.ts</code>.</li>
+    <li>Les coordonnées affichées sont dans <code>web/src/lib/site.ts</code>, celles des messages et PDF dans <code>server/src/lib/company.ts</code>, les tarifs dans <code>server/src/lib/domain.ts</code>.</li>
   </ul>
 </section>
 
@@ -371,7 +371,7 @@
   </div>
 
   <h2 id="t-51"><span class="n">5.1</span>WhatsApp</h2>
-  <p>Code : <code>api/src/lib/whatsapp.ts</code>. Fournisseur choisi par <code>WHATSAPP_PROVIDER</code> ou détecté selon les identifiants présents ; sans identifiants : mode simulé.</p>
+  <p>Code : <code>server/src/lib/whatsapp.ts</code>. Fournisseur choisi par <code>WHATSAPP_PROVIDER</code> ou détecté selon les identifiants présents ; sans identifiants : mode simulé.</p>
   <ul>
     <li><strong>Alertes d’étape</strong> : un message par étape franchie vers l’avant (y compris en masse), au plus un par étape et par colis ; envoi en arrière-plan, 3 tentatives (immédiate, +30 s, +2 min) ; après le dernier échec, notification <code>WHATSAPP_FAILED</code> aux administrateurs.</li>
     <li><strong>Codes et avis de compte</strong> : envoi immédiat (la réponse HTTP attend le résultat).</li>
@@ -387,7 +387,7 @@
   <p>Les textes à soumettre à Meta ou Twilio sont dans <code>docs/whatsapp-alertes.md</code>.</p>
 
   <h2 id="t-52"><span class="n">5.2</span>E-mail</h2>
-  <p>Code : <code>api/src/lib/mailer.ts</code> (nodemailer, SMTP). Avec Gmail : validation en deux étapes, puis un <strong>mot de passe d’application</strong> dans <code>SMTP_PASS</code>, <code>SMTP_HOST=smtp.gmail.com</code>, port 465 sécurisé. Gmail limite le volume quotidien ; pour un volume plus important, utiliser un service d’envoi dédié (mêmes variables SMTP). Les e-mails sont envoyés en texte et en HTML aux couleurs de Kader Cargo.</p>
+  <p>Code : <code>server/src/lib/mailer.ts</code> (nodemailer, SMTP). Avec Gmail : validation en deux étapes, puis un <strong>mot de passe d’application</strong> dans <code>SMTP_PASS</code>, <code>SMTP_HOST=smtp.gmail.com</code>, port 465 sécurisé. Gmail limite le volume quotidien ; pour un volume plus important, utiliser un service d’envoi dédié (mêmes variables SMTP). Les e-mails sont envoyés en texte et en HTML aux couleurs de Kader Cargo.</p>
 
   <h2 id="t-53"><span class="n">5.3</span>Connexion Google</h2>
   <ol class="steps">
@@ -441,13 +441,13 @@
     git clone git@github.com:siaoctawacta/Tracking.git /srv/kader-cargo
 <span class="p">$ </span>git -C /srv/kader-cargo config core.sshCommand "ssh -i /root/.ssh/kader_deploy"</pre>
   <h3>Étape 6 — Configuration</h3>
-  <pre class="cmd"><span class="p">$ </span>cd /srv/kader-cargo &amp;&amp; cp deploy/env.production.example api/.env
+  <pre class="cmd"><span class="p">$ </span>cd /srv/kader-cargo &amp;&amp; cp deploy/env.production.example server/.env
 <span class="p">$ </span>node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"  <span class="c"># → JWT_SECRET</span>
-<span class="p">$ </span>nano api/.env              <span class="c"># JWT_SECRET, PUBLIC_WEB_URL, WhatsApp, SMTP (annexe A)</span>
-<span class="p">$ </span>chown root:kader api/.env &amp;&amp; chmod 640 api/.env</pre>
+<span class="p">$ </span>nano server/.env              <span class="c"># JWT_SECRET, PUBLIC_WEB_URL, WhatsApp, SMTP (annexe A)</span>
+<span class="p">$ </span>chown root:kader server/.env &amp;&amp; chmod 640 server/.env</pre>
   <h3>Étape 7 — Installation, base et premier administrateur</h3>
-  <pre class="cmd"><span class="p">$ </span>npm --prefix api ci &amp;&amp; npm --prefix web ci &amp;&amp; npm --prefix web run build
-<span class="p">$ </span>cd /srv/kader-cargo/api
+  <pre class="cmd"><span class="p">$ </span>npm --prefix server ci &amp;&amp; npm --prefix web ci &amp;&amp; npm --prefix web run build
+<span class="p">$ </span>cd /srv/kader-cargo/server
 <span class="p">$ </span>runuser -u kader -- ./node_modules/.bin/prisma migrate deploy
 <span class="p">$ </span>runuser -u kader -- npm run create-admin -- --name "Kader" --email admin@kadercargo.com
 <span class="c">  Mot de passe (10 caractères min.) :     ← saisi sans affichage</span></pre>
@@ -486,7 +486,7 @@
   <ol class="steps">
     <li>Dans <code>vercel.json</code>, remplacez <code>https://api.kadercargo.com</code> par l’adresse réelle de l’API, puis publiez sur <code>main</code>.</li>
     <li>Dans Vercel : <strong>Root Directory</strong> = racine du dépôt (laisser vide), aucun réglage de build à saisir (tout est dans <code>vercel.json</code>), domaine personnalisé <code>kadercargo.com</code>.</li>
-    <li>Sur le serveur, dans <code>api/.env</code> : <code>TRUST_PROXY=2</code> (Vercel puis Caddy) et <code>PUBLIC_WEB_URL</code> = l’adresse du site sur Vercel ; redémarrez l’API.</li>
+    <li>Sur le serveur, dans <code>server/.env</code> : <code>TRUST_PROXY=2</code> (Vercel puis Caddy) et <code>PUBLIC_WEB_URL</code> = l’adresse du site sur Vercel ; redémarrez l’API.</li>
     <li>Vérifiez <code>https://kadercargo.com/api/v1/health</code>, une connexion, puis l’envoi d’une photo de contrôle.</li>
   </ol>
   <div class="callout warn"><b class="t">Points d’attention</b><p>Avec <code>TRUST_PROXY=1</code>, tous les visiteurs auraient l’adresse IP de Vercel et partageraient la limite de 5 essais de connexion. Avec <code>TRUST_PROXY=2</code>, quelqu’un qui appelle directement <code>api.kadercargo.com</code> pourrait fausser son adresse IP pour contourner cette limite : gardez des mots de passe robustes. Vérifiez aussi que l’envoi des photos (jusqu’à 5 Mo chacune) passe par le relais de Vercel. Si ces contraintes gênent, la solution la plus simple reste d’héberger site et API sur le même serveur avec Caddy (6.2).</p></div>
@@ -529,7 +529,7 @@
     <thead><tr><th style="width:32%">Symptôme</th><th>Cause probable et action</th></tr></thead>
     <tr><td>Site inaccessible</td><td>DNS, pare-feu (<code>ufw status</code>), <code>systemctl status caddy</code>.</td></tr>
     <tr><td>502 Bad Gateway</td><td>API arrêtée : lire le journal, puis <code>systemctl restart kader-cargo-api</code>.</td></tr>
-    <tr><td>« JWT_SECRET must be set… »</td><td>Secret absent ou trop court dans <code>api/.env</code>.</td></tr>
+    <tr><td>« JWT_SECRET must be set… »</td><td>Secret absent ou trop court dans <code>server/.env</code>.</td></tr>
     <tr><td>Alertes « Simulé »</td><td>Aucun fournisseur WhatsApp configuré.</td></tr>
     <tr><td>Alertes « Échec »</td><td>Identifiants, modèles non approuvés ou numéro invalide : message d’erreur dans la fiche du colis et dans le journal.</td></tr>
     <tr><td>E-mails non reçus</td><td>Mot de passe d’application Gmail, dossier spam, journal (<code>[otp] delivery failed</code>).</td></tr>
@@ -539,7 +539,7 @@
 
   <h2 id="t-74"><span class="n">7.4</span>Check-list de mise en production</h2>
   <ul>
-    <li><code>NODE_ENV=production</code>, <code>JWT_SECRET</code> unique et secret, <code>api/.env</code> en 640 (root:kader).</li>
+    <li><code>NODE_ENV=production</code>, <code>JWT_SECRET</code> unique et secret, <code>server/.env</code> en 640 (root:kader).</li>
     <li>SSH par clé uniquement, mot de passe root désactivé, <code>unattended-upgrades</code> actif, pare-feu limité à SSH/80/443.</li>
     <li>WhatsApp et SMTP configurés et testés <strong>avant</strong> d’ouvrir les inscriptions ; modèles approuvés.</li>
     <li><code>PUBLIC_WEB_URL</code> et <code>TRUST_PROXY=1</code> renseignés.</li>
@@ -555,10 +555,10 @@
     <div class="num">annexes</div>
     <h1>Référence de configuration</h1>
     <p>Variables d’environnement et commandes utiles.</p>
-    <span class="tag">api/.env</span>
+    <span class="tag">server/.env</span>
   </div>
 
-  <h2 id="t-a"><span class="n">A</span>Variables d’environnement (api/.env)</h2>
+  <h2 id="t-a"><span class="n">A</span>Variables d’environnement (server/.env)</h2>
   <table>
     <thead><tr><th style="width:34%">Variable</th><th style="width:22%">Production</th><th>Rôle</th></tr></thead>
     <tr><td><code>NODE_ENV</code></td><td><code>production</code></td><td>Cookies <code>__Host-</code> sécurisés, aucun <code>devCode</code>, secret obligatoire</td></tr>
@@ -580,12 +580,12 @@
 
   <h2 id="t-b"><span class="n">B</span>Commandes utiles</h2>
   <pre class="cmd"><span class="c"># Créer un autre administrateur / réinitialiser son mot de passe</span>
-<span class="p">$ </span>cd /srv/kader-cargo/api &amp;&amp; runuser -u kader -- npm run create-admin -- --name "Nom" --email nom@kadercargo.com
+<span class="p">$ </span>cd /srv/kader-cargo/server &amp;&amp; runuser -u kader -- npm run create-admin -- --name "Nom" --email nom@kadercargo.com
 
 <span class="c"># Sauvegarde manuelle</span>
 <span class="p">$ </span>/srv/kader-cargo/deploy/backup.sh
 
-<span class="c"># Redémarrer après une modification de api/.env</span>
+<span class="c"># Redémarrer après une modification de server/.env</span>
 <span class="p">$ </span>systemctl restart kader-cargo-api
 
 <span class="c"># Vérifier la configuration Caddy avant de la recharger</span>
