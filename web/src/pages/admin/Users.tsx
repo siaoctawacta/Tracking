@@ -28,14 +28,14 @@ export default function Users() {
             {data.users.map((u) => (
               <li key={u.id} className={cx('flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between', !u.active && 'opacity-50')}>
                 <div className="flex items-center gap-3">
-                  <span className="grid size-9 place-items-center rounded-full bg-canvas text-xs font-bold text-navy">{u.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
+                  <span className="grid size-9 place-items-center rounded-full bg-canvas text-xs font-bold text-heading">{u.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
                   <div>
-                    <p className="font-semibold text-navy">{u.name}</p>
+                    <p className="font-semibold text-heading">{u.name}</p>
                     <p className="text-xs text-muted">{[u.email, u.phone].filter(Boolean).join(' · ')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={cx('rounded-full px-2.5 py-1 text-xs font-semibold', u.role === 'CLIENT' ? 'bg-slate-100 text-slate-600' : 'bg-electric-50 text-electric-600')}>{ROLE_LABELS[u.role]}</span>
+                  <span className={cx('rounded-full px-2.5 py-1 text-xs font-semibold', u.role === 'CLIENT' ? 'bg-slate-100 text-slate-600' : 'bg-brand-50 text-brand-600')}>{ROLE_LABELS[u.role]}</span>
                   <span className="hidden text-xs text-muted md:inline">Créé le {dateShort(u.createdAt)}</span>
                   {u.id !== me?.id && <Button size="sm" variant="ghost" onClick={() => toggle(u)}>{u.active ? 'Désactiver' : 'Réactiver'}</Button>}
                 </div>

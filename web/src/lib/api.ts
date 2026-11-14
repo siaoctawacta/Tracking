@@ -1,5 +1,5 @@
 /**
- * Thin client for the Benit Cargo REST API.
+ * Thin client for the Kader Cargo REST API.
  * - Session JWTs live only in HttpOnly cookies (never readable here, never in localStorage).
  * - A CSRF token is fetched from the API and kept in memory, then echoed in X-CSRF-Token.
  * - On 401 the client silently rotates the refresh token once, then retries.

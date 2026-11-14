@@ -1,6 +1,15 @@
 import crypto from 'node:crypto'
 
 const env = process.env
+
+function parseJson<T>(raw: string | undefined): T | null {
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    throw new Error('Invalid JSON in environment variable')
+  }
+}
 const isProd = env.NODE_ENV === 'production'
 const isTest = env.NODE_ENV === 'test' || !!env.VITEST
 
@@ -34,9 +43,24 @@ export const config = {
   loginRateLimit: Number(env.LOGIN_RATE_LIMIT ?? 5),
   uploadDir: new URL('../uploads/', import.meta.url).pathname,
   maxPhotoBytes: 5 * 1024 * 1024,
-  twilio: {
-    sid: env.TWILIO_ACCOUNT_SID ?? '',
-    token: env.TWILIO_AUTH_TOKEN ?? '',
-    from: env.TWILIO_WHATSAPP_FROM ?? '',
+  /** Public URL of the SPA, used for tracking links in WhatsApp messages (omitted when empty). */
+  publicWebUrl: (env.PUBLIC_WEB_URL ?? '').replace(/\/+$/, ''),
+  whatsapp: {
+    /** 'twilio' | 'meta' | 'simulated' — auto-detected from the credentials when unset. */
+    provider: env.WHATSAPP_PROVIDER ?? '',
+    twilio: {
+      sid: env.TWILIO_ACCOUNT_SID ?? '',
+      token: env.TWILIO_AUTH_TOKEN ?? '',
+      from: env.TWILIO_WHATSAPP_FROM ?? '',
+      /** Optional JSON map step → approved Content template SID, e.g. {"READY":"HX…"} */
+      contentSids: parseJson<Record<string, string>>(env.TWILIO_CONTENT_SIDS) ?? {},
+    },
+    meta: {
+      token: env.META_WHATSAPP_TOKEN ?? '',
+      phoneNumberId: env.META_WHATSAPP_PHONE_NUMBER_ID ?? '',
+      /** Approved templates are named `${prefix}${step}` (e.g. kader_ready). Empty = free-form text (24h window only). */
+      templatePrefix: env.META_TEMPLATE_PREFIX ?? 'kader_',
+      language: env.META_TEMPLATE_LANGUAGE ?? 'fr',
+    },
   },
 }

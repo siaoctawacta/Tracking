@@ -9,7 +9,7 @@ export const trackingRouter = Router()
 // Public endpoint: throttle to make tracking-number enumeration impractical.
 trackingRouter.use(rateLimit({ windowMs: 60 * 1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false }))
 
-const TRACKING_RE = /^BC-\d{4}-[A-Z0-9]{4,8}$/
+const TRACKING_RE = /^KC-\d{4}-[A-Z0-9]{4,8}$/
 
 const maskName = (n: string) =>
   n.split(/\s+/).filter(Boolean).map((p, i) => (i === 0 ? p : p[0] + '.')).join(' ')
@@ -17,7 +17,7 @@ const maskPhone = (p: string) => p.slice(0, 4) + ' •• •• ' + p.slice(-2)
 
 trackingRouter.get('/:trackingId', async (req, res) => {
   const trackingId = String(req.params.trackingId).trim().toUpperCase()
-  if (!TRACKING_RE.test(trackingId)) throw new HttpError(400, 'Format de numéro de suivi invalide (ex : BC-2026-7KX9QA)', 'bad_tracking_id')
+  if (!TRACKING_RE.test(trackingId)) throw new HttpError(400, 'Format de numéro de suivi invalide (ex : KC-2026-7KX9QA)', 'bad_tracking_id')
 
   const s = await prisma.shipment.findUnique({
     where: { trackingId },

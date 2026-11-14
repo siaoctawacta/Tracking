@@ -107,15 +107,22 @@ model Photo {
   createdAt  DateTime @default(now())
 }
 
-/// Channel: WHATSAPP — Status: SENT | SIMULATED | FAILED
+/// Channel: WHATSAPP — Status: PENDING | SENT | SIMULATED | FAILED
+/// `step` is the shipment status the alert announces (one alert per step, see lib/whatsapp.ts).
 model Notification {
-  id         String   @id @default(cuid())
-  shipmentId String
-  shipment   Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
-  channel    String   @default("WHATSAPP")
-  to         String
-  body       String
-  status     String
-  error      String?
-  createdAt  DateTime @default(now())
+  id                String    @id @default(cuid())
+  shipmentId        String
+  shipment          Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  channel           String    @default("WHATSAPP")
+  step              String?
+  to                String
+  body              String
+  status            String
+  error             String?
+  attempts          Int       @default(0)
+  providerMessageId String?
+  sentAt            DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([shipmentId, step])
 }

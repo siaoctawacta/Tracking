@@ -14,7 +14,7 @@ export function ThemeToggle({ className, withLabel = false }: { className?: stri
       aria-pressed={dark}
       title={label}
       className={cx(
-        'group inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl text-muted transition hover:bg-slate-100 hover:text-navy',
+        'group inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl text-muted transition hover:bg-slate-100 hover:text-heading',
         withLabel ? 'px-3 text-sm font-medium' : 'w-9 justify-center',
         className,
       )}

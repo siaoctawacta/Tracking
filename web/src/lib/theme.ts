@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 
 export type Theme = 'light' | 'dark'
-const KEY = 'bc-theme'
+const KEY = 'kc-theme'
 const media = () => window.matchMedia('(prefers-color-scheme: dark)')
 
 function stored(): Theme | null {
@@ -23,7 +23,7 @@ function apply(theme: Theme, animate: boolean) {
     window.setTimeout(() => root.classList.remove('theme-transition'), 350)
   }
   root.classList.toggle('dark', theme === 'dark')
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0b1220' : '#f8fafc')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#140b0e' : '#fbf8f9')
   listeners.forEach((l) => l())
 }
 

@@ -42,7 +42,7 @@ export default function Login() {
           <ThemeToggle />
         </div>
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-12">
-          <h1 className="text-3xl font-bold tracking-tight text-navy">Connexion</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-heading">Connexion</h1>
           <p className="mt-2 text-sm text-muted">Accédez à vos colis, factures et photos de contrôle.</p>
           <form onSubmit={submit} className="mt-8 space-y-4" noValidate>
             {error && <Alert>{error}</Alert>}
@@ -70,10 +70,10 @@ export default function Login() {
         </div>
       </div>
       <div className="relative hidden overflow-hidden bg-deep lg:block">
-        <div aria-hidden className="absolute -left-24 top-1/3 size-[28rem] rounded-full bg-electric/25 blur-3xl" />
+        <div aria-hidden className="absolute -left-24 top-1/3 size-[28rem] rounded-full bg-brand/25 blur-3xl" />
         <div aria-hidden className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:48px_48px]" />
         <div className="relative flex h-full flex-col justify-end p-14">
-          <ShieldCheck className="size-10 text-electric" />
+          <ShieldCheck className="size-10 text-brand" />
           <p className="mt-6 max-w-md text-3xl font-bold leading-tight tracking-tight text-white">Toutes vos expéditions Chine → Togo, au même endroit.</p>
           <p className="mt-4 max-w-sm text-white/70">Statuts en temps réel, factures téléchargeables et photos de vos marchandises prises à l’entrepôt.</p>
         </div>

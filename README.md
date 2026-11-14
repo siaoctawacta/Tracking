@@ -1,6 +1,10 @@
-# Benit Cargo — Plateforme de fret & tracking Chine → Togo
+<p align="center"><img src="brand/kader-cargo-logo.svg" alt="Kader Cargo" height="64"></p>
 
-MVP de l'application web décrite dans le cahier des charges v1.1 : site public avec suivi de colis, espace client sécurisé et back-office multi-agences (Guangzhou / Lomé).
+# Kader Cargo — Express Air Cargo Guangzhou → Lomé
+
+Plateforme web de fret et de suivi de colis (cahier des charges v1.1) : site public avec suivi, espace client sécurisé et back-office multi-agences (Guangzhou / Lomé). Livraison porte-à-porte vers Lomé, Accra, Abidjan, Cotonou et Niamey.
+
+Charte : **rouge bordeaux `#8B1538` et blanc**, logo avec avion (`brand/`).
 
 | Accueil | Suivi de colis |
 |---|---|
@@ -15,20 +19,20 @@ Prérequis : Node.js ≥ 22.
 ```bash
 npm run setup   # installe api + web, crée api/.env (secret JWT aléatoire), base SQLite + données de démo
 npm run dev     # API sur :4000, SPA sur http://localhost:5173 (proxy /api)
-npm test        # 21 tests d'intégration de l'API (auth, RBAC, CSRF, rate-limit, workflow)
+npm test        # 27 tests d'intégration de l'API (auth, RBAC, CSRF, rate-limit, workflow, alertes WhatsApp)
 ```
 
 ### Comptes de démonstration
 
 | Rôle | Identifiant | Mot de passe |
 |---|---|---|
-| Administrateur | `admin@benitcargo.com` | `Admin#Benit2026` |
-| Entrepôt Guangzhou | `gz@benitcargo.com` | `Guangzhou#2026` |
-| Agence Lomé | `lome@benitcargo.com` | `Lome#Agence2026` |
+| Administrateur (Kader) | `admin@kadercargo.com` | `Admin#Kader2026` |
+| Entrepôt Guangzhou (Mounkaila) | `gz@kadercargo.com` | `Guangzhou#2026` |
+| Agence Lomé (Moussa) | `lome@kadercargo.com` | `Lome#Agence2026` |
 | Client (Afi Mensah) | `90 11 22 33` | `Client#2026` |
 | Client (Yao Kodjo) | `+228 91 44 55 66` | `Client#2026` |
 
-Numéros de suivi publics de démo : `BC-2026-889X` (en mer), `BC-2026-7KX9QA` (en vol), `BC-2026-R2D4HN` (à retirer).
+Numéros de suivi publics de démo : `KC-2026-7KX9QA` (en vol), `KC-2026-R2D4HN` (à retirer), `KC-2026-889X` (maritime, en mer).
 
 ## Architecture
 
@@ -51,12 +55,15 @@ api/
   prisma/seed.ts            données de démonstration
   src/app.ts                Helmet, CORS, CSRF, routes /api/v1
   src/lib/security.ts       Argon2id, JWT, hachage des refresh tokens
-  src/lib/domain.ts         statuts, RBAC des transitions, tarifs, générateur BC-AAAA-XXXXXX
-  src/lib/whatsapp.ts       alertes WhatsApp (Twilio ou mode simulé)
+  src/lib/domain.ts         statuts, RBAC des transitions, tarifs, générateur KC-AAAA-XXXXXX
+  src/lib/whatsapp.ts       alertes WhatsApp à chaque étape (Twilio, Meta Cloud API ou simulé)
+  src/lib/company.ts        coordonnées Kader Cargo (agences, contacts)
   src/lib/pdf.ts            factures A4 et étiquettes 100×150 mm (code-barres + QR)
   src/routes/*.ts           auth, tracking, shipments, containers, users
   test/api.test.ts          tests d'intégration (Vitest + Supertest)
+brand/                      logo (SVG vectoriel + PNG), script de génération build-logo.mjs
 web/
+  src/lib/site.ts           coordonnées affichées sur le site
   src/pages/                Home, Track, Login, client/*, admin/*
   src/lib/api.ts            client HTTP : CSRF en mémoire + rotation silencieuse du refresh token
   public/_headers           en-têtes de sécurité CDN (CSP, HSTS, X-Frame-Options)
@@ -81,7 +88,7 @@ web/
 | Mise à jour de statut en masse d'un lot | ✓ (ses étapes) | ✓ (ses étapes) | ✓ |
 | Gestion des comptes | | | ✓ |
 
-Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque changement de statut crée un événement daté et envoie une alerte WhatsApp au client.
+Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque étape franchie crée un événement daté et envoie au client un message WhatsApp rédigé pour cette étape — voir [docs/whatsapp-alertes.md](docs/whatsapp-alertes.md) (messages, règles, modèles à faire approuver, configuration Twilio / Meta).
 
 ## API
 
@@ -100,6 +107,8 @@ Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque
 | GET | `/api/v1/shipments/{id}/label.pdf` | Personnel |
 | PATCH | `/api/v1/shipments/{id}/status` | Admin / Agent Lomé / Agent GZ (selon l'étape) + WhatsApp |
 | POST | `/api/v1/shipments/{id}/photos` | Admin / Agent Guangzhou |
+| GET | `/api/v1/shipments/{id}/alert-preview?status=` | Personnel — aperçu du message WhatsApp |
+| POST | `/api/v1/shipments/{id}/notifications/{nid}/resend` | Personnel — renvoi d'une alerte |
 | GET/POST/PATCH | `/api/v1/containers[/{id}]` | Personnel / GZ |
 | POST/DELETE | `/api/v1/containers/{id}/shipments` | GZ — affectation des colis |
 | POST | `/api/v1/containers/{id}/close` | GZ — clôture → « Chargement » |
@@ -119,13 +128,13 @@ Les agents ne peuvent que faire avancer un colis ; l'admin peut corriger. Chaque
 
 ## Mise en production
 
-1. `api/.env` : `NODE_ENV=production`, `JWT_SECRET` (≥ 48 octets aléatoires), `DATABASE_URL`, `CORS_ORIGINS=https://benitcargo.com`, `TRUST_PROXY=1` derrière un reverse-proxy. En production les cookies sont forcés en `Secure` avec préfixe `__Host-`.
+1. `api/.env` : `NODE_ENV=production`, `JWT_SECRET` (≥ 48 octets aléatoires), `DATABASE_URL`, `CORS_ORIGINS=https://kadercargo.com`, `TRUST_PROXY=1` derrière un reverse-proxy. En production les cookies sont forcés en `Secure` avec préfixe `__Host-`.
 2. `npm --prefix api run db:deploy`, puis `npm --prefix api start` (TLS 1.3 terminé par le reverse-proxy).
-3. SPA : `VITE_API_URL=https://api.benitcargo.com npm run build`, puis déployer `web/dist` sur le CDN (ajuster `connect-src` dans `_headers`). Servir SPA et API sur le même site (ex. `benitcargo.com` / `api.benitcargo.com`) pour que les cookies `SameSite=Strict` soient envoyés.
-4. WhatsApp : renseigner `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`. Sans ces variables, les messages sont simulés (journalisés et visibles dans le back-office).
+3. SPA : `VITE_API_URL=https://api.kadercargo.com npm run build`, puis déployer `web/dist` sur le CDN (ajuster `connect-src` dans `_headers`). Servir SPA et API sur le même site (ex. `kadercargo.com` / `api.kadercargo.com`) pour que les cookies `SameSite=Strict` soient envoyés.
+4. WhatsApp : Twilio ou Meta Cloud API, voir [docs/whatsapp-alertes.md](docs/whatsapp-alertes.md). Renseigner aussi `PUBLIC_WEB_URL` pour inclure le lien de suivi dans les messages. Sans identifiants, les messages sont simulés (journalisés et visibles dans le back-office).
 
 ## À compléter avant lancement
 
-- Coordonnées réelles des agences et numéro WhatsApp : `web/src/lib/site.ts` (valeurs fictives pour l'instant).
+- Coordonnées : reprises de la carte de visite Kader Cargo dans `web/src/lib/site.ts` (site) et `api/src/lib/company.ts` (messages, PDF). L'adresse précise de l'agence de Lomé n'y figure pas encore.
 - Tarifs : `api/src/lib/domain.ts` (`TARIFFS`) — dupliqués côté SPA pour l'estimateur uniquement (`Home.tsx`, `NewShipment.tsx`).
 - Hors périmètre MVP : inscription client en libre-service (nécessite une vérification OTP du téléphone), paiement Mobile Money, stockage objet (S3) pour les photos, envoi des templates WhatsApp Business approuvés.

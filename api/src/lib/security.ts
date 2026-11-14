@@ -36,8 +36,8 @@ export function signAccessToken(claims: AccessClaims): string {
   return jwt.sign(claims, config.jwtSecret, {
     algorithm: 'HS256',
     expiresIn: config.accessTtlSec,
-    issuer: 'benit-cargo',
-    audience: 'benit-cargo-web',
+    issuer: 'kader-cargo',
+    audience: 'kader-cargo-web',
     jwtid: crypto.randomUUID(),
   })
 }
@@ -46,8 +46,8 @@ export function verifyAccessToken(token: string): AccessClaims | null {
   try {
     const p = jwt.verify(token, config.jwtSecret, {
       algorithms: ['HS256'],
-      issuer: 'benit-cargo',
-      audience: 'benit-cargo-web',
+      issuer: 'kader-cargo',
+      audience: 'kader-cargo-web',
     }) as jwt.JwtPayload
     return { sub: String(p.sub), role: p.role as Role, name: String(p.name ?? '') }
   } catch {

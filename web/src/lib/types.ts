@@ -60,9 +60,13 @@ export interface Container {
 
 export interface Notification {
   id: string
+  step: Status | null
   to: string
   body: string
-  status: 'SENT' | 'SIMULATED' | 'FAILED'
+  status: 'PENDING' | 'SENT' | 'SIMULATED' | 'FAILED'
+  error: string | null
+  attempts: number
+  sentAt: string | null
   createdAt: string
 }
 

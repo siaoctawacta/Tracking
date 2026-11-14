@@ -28,7 +28,7 @@ export default function ClientDashboard() {
       </div>
 
       <div className="mt-10 flex items-center justify-between">
-        <h2 className="font-semibold text-navy">Mes colis</h2>
+        <h2 className="font-semibold text-heading">Mes colis</h2>
       </div>
 
       {loading ? <PageLoader /> : list.length === 0 ? (
@@ -42,22 +42,22 @@ export default function ClientDashboard() {
               <Link to={`/espace/colis/${s.id}`} className="group block rounded-2xl border border-line bg-surface p-5 transition hover:border-slate-300 hover:shadow-lg hover:shadow-black/5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 gap-4">
-                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-canvas text-navy"><ModeIcon mode={s.mode} className="size-5" /></span>
+                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-canvas text-heading"><ModeIcon mode={s.mode} className="size-5" /></span>
                     <div className="min-w-0">
-                      <p className="font-semibold tracking-wide text-navy">{s.trackingId}</p>
+                      <p className="font-semibold tracking-wide text-heading">{s.trackingId}</p>
                       <p className="truncate text-sm text-muted">{s.description}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={s.status} label={s.statusLabel} className="hidden sm:inline-flex" />
-                    <ArrowUpRight className="size-4 text-slate-300 transition group-hover:text-electric" />
+                    <ArrowUpRight className="size-4 text-slate-300 transition group-hover:text-brand" />
                   </div>
                 </div>
                 <Progress status={s.status} />
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
                   <StatusBadge status={s.status} label={s.statusLabel} className="sm:hidden" />
                   <span>Reçu le {dateShort(s.createdAt)}{s.container?.etaAt && !['READY', 'DELIVERED'].includes(s.status) ? ` · Arrivée prévue ${dateShort(s.container.etaAt)}` : ''}</span>
-                  <span className="font-semibold text-navy">{fcfa(s.priceXof)}</span>
+                  <span className="font-semibold text-heading">{fcfa(s.priceXof)}</span>
                 </div>
               </Link>
             </li>
@@ -72,7 +72,7 @@ function Progress({ status }: { status: Shipment['status'] }) {
   const i = STATUSES.indexOf(status)
   return (
     <div className="mt-5 flex gap-1">
-      {STATUSES.map((s, j) => <span key={s} className={cx('h-1 flex-1 rounded-full', j <= i ? 'bg-electric' : 'bg-line')} />)}
+      {STATUSES.map((s, j) => <span key={s} className={cx('h-1 flex-1 rounded-full', j <= i ? 'bg-brand' : 'bg-line')} />)}
     </div>
   )
 }
@@ -80,9 +80,9 @@ function Progress({ status }: { status: Shipment['status'] }) {
 function Pill({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: number; highlight?: boolean }) {
   return (
     <div className={cx('flex items-center gap-4 rounded-2xl border p-5', highlight ? 'border-emerald-200 bg-emerald-50' : 'border-line bg-surface')}>
-      <span className={cx('grid size-10 place-items-center rounded-xl', highlight ? 'bg-emerald-500 text-white' : 'bg-electric-50 text-electric')}>{icon}</span>
+      <span className={cx('grid size-10 place-items-center rounded-xl', highlight ? 'bg-emerald-500 text-white' : 'bg-brand-50 text-brand')}>{icon}</span>
       <div>
-        <p className="text-2xl font-bold text-navy">{value}</p>
+        <p className="text-2xl font-bold text-heading">{value}</p>
         <p className="text-xs text-muted">{label}</p>
       </div>
     </div>

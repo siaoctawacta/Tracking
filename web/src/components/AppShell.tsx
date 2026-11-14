@@ -16,14 +16,14 @@ export function UserChip() {
   const initials = user.name.split(' ').map((p) => p[0]).slice(0, 2).join('').toUpperCase()
   return (
     <div className="flex items-center gap-3">
-      <span className="grid size-9 place-items-center rounded-full bg-electric-50 text-xs font-bold text-electric-600">{initials}</span>
+      <span className="grid size-9 place-items-center rounded-full bg-brand-50 text-xs font-bold text-brand-600">{initials}</span>
       <div className="hidden leading-tight sm:block">
-        <p className="text-sm font-semibold text-navy">{user.name}</p>
+        <p className="text-sm font-semibold text-heading">{user.name}</p>
         <p className="text-xs text-muted">{ROLE_LABELS[user.role]}</p>
       </div>
       <button
         onClick={async () => { await logout(); navigate('/connexion') }}
-        className="ml-1 grid size-9 cursor-pointer place-items-center rounded-xl text-muted transition hover:bg-slate-100 hover:text-navy"
+        className="ml-1 grid size-9 cursor-pointer place-items-center rounded-xl text-muted transition hover:bg-slate-100 hover:text-heading"
         aria-label="Se déconnecter" title="Se déconnecter"
       >
         <LogOut className="size-4" />
@@ -56,7 +56,7 @@ export function StaffShell({ nav, children }: { nav: NavItem[]; children: ReactN
         <nav className="flex-1 space-y-1 px-3 py-4">
           {nav.map((n) => (
             <NavLink key={n.to} to={n.to} end={n.end}
-              className={({ isActive }) => cx('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition', isActive ? 'bg-electric-50 text-electric-600' : 'text-muted hover:bg-slate-50 hover:text-navy')}>
+              className={({ isActive }) => cx('flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition', isActive ? 'bg-brand-50 text-brand-600' : 'text-muted hover:bg-slate-50 hover:text-heading')}>
               {n.icon}{n.label}
             </NavLink>
           ))}
@@ -73,7 +73,7 @@ export function StaffShell({ nav, children }: { nav: NavItem[]; children: ReactN
       <main className="mx-auto max-w-6xl px-5 pb-28 pt-8 md:px-10 md:pb-12 md:pt-10">{children}</main>
       <nav className="fixed inset-x-0 bottom-0 z-30 grid border-t border-line bg-surface/95 backdrop-blur md:hidden" style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}>
         {nav.map((n) => (
-          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium', isActive ? 'text-electric' : 'text-muted')}>
+          <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => cx('flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium', isActive ? 'text-brand' : 'text-muted')}>
             {n.icon}{n.label}
           </NavLink>
         ))}
@@ -88,7 +88,7 @@ export function PageHeader({ title, text, actions, back }: { title: ReactNode; t
       {back}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-navy md:text-3xl">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-heading md:text-3xl">{title}</h1>
           {text && <p className="mt-1.5 text-sm text-muted">{text}</p>}
         </div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -98,5 +98,5 @@ export function PageHeader({ title, text, actions, back }: { title: ReactNode; t
 }
 
 export function BackLink({ to, label }: { to: string; label: string }) {
-  return <Link to={to} className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-navy">← {label}</Link>
+  return <Link to={to} className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted hover:text-heading">← {label}</Link>
 }

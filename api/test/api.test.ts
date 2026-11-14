@@ -27,9 +27,9 @@ async function session(login?: { identifier: string; password: string }) {
   return s
 }
 
-const ADMIN = { identifier: 'admin@benitcargo.com', password: 'Admin#Benit2026' }
-const GZ = { identifier: 'gz@benitcargo.com', password: 'Guangzhou#2026' }
-const LOME = { identifier: 'lome@benitcargo.com', password: 'Lome#Agence2026' }
+const ADMIN = { identifier: 'admin@kadercargo.com', password: 'Admin#Kader2026' }
+const GZ = { identifier: 'gz@kadercargo.com', password: 'Guangzhou#2026' }
+const LOME = { identifier: 'lome@kadercargo.com', password: 'Lome#Agence2026' }
 const AFI = { identifier: '90 11 22 33', password: 'Client#2026' }
 const YAO = { identifier: '+22891445566', password: 'Client#2026' }
 
@@ -125,7 +125,7 @@ describe('authentication & sessions', () => {
 
 describe('public tracking', () => {
   it('returns a timeline without exposing personal data', async () => {
-    const res = await request(app).get('/api/v1/tracking/bc-2026-889x').set('X-Forwarded-For', nextIp())
+    const res = await request(app).get('/api/v1/tracking/kc-2026-889x').set('X-Forwarded-For', nextIp())
     expect(res.status).toBe(200)
     expect(res.body.tracking.statusLabel).toBe('En mer')
     expect(res.body.tracking.events.length).toBe(3)
@@ -134,7 +134,7 @@ describe('public tracking', () => {
   })
   it('validates the format and 404s unknown parcels', async () => {
     expect((await request(app).get('/api/v1/tracking/abc').set('X-Forwarded-For', nextIp())).status).toBe(400)
-    expect((await request(app).get('/api/v1/tracking/BC-2026-ZZZZZZ').set('X-Forwarded-For', nextIp())).status).toBe(404)
+    expect((await request(app).get('/api/v1/tracking/KC-2026-ZZZZZZ').set('X-Forwarded-For', nextIp())).status).toBe(404)
   })
 })
 
@@ -153,7 +153,7 @@ describe('shipments workflow & RBAC', () => {
   })
 
   it('creates a shipment with a tracking ID, computed price and a WhatsApp alert', async () => {
-    expect(trackingId).toMatch(/^BC-\d{4}-[A-Z0-9]{6}$/)
+    expect(trackingId).toMatch(/^KC-\d{4}-[A-Z0-9]{6}$/)
     const s = await prisma.shipment.findUnique({ where: { id: shipmentId } })
     expect(s?.clientPhone).toBe('+22891445566')
     expect(s?.priceXof).toBe(125_000)
@@ -225,7 +225,7 @@ describe('containers', () => {
 
     const created = await gz.post('/api/v1/shipments').send({ description: 'Montres', mode: 'AIR', weightKg: 3, volumeCbm: 0.01, clientName: 'Afi Mensah', clientPhone: '+22890112233' })
     const tid = created.body.shipment.trackingId
-    const assign = await gz.post(`/api/v1/containers/${id}/shipments`).send({ trackingIds: [tid, 'BC-2026-889X', 'BC-2026-NOPE00'] })
+    const assign = await gz.post(`/api/v1/containers/${id}/shipments`).send({ trackingIds: [tid, 'KC-2026-889X', 'KC-2026-NOPE00'] })
     expect(assign.body.assigned).toBe(1)
     expect(assign.body.rejected).toHaveLength(2)
 
@@ -238,6 +238,10 @@ describe('containers', () => {
     const lome = await session(LOME)
     expect((await lome.patch(`/api/v1/containers/${id}/status`).send({ status: 'IN_TRANSIT' })).status).toBe(403)
     expect((await lome.patch(`/api/v1/containers/${id}/status`).send({ status: 'ARRIVED' })).body.updated).toBe(1)
+
+    // One WhatsApp alert per step cleared: reception, loading (on close), in flight, arrived.
+    const steps = (await prisma.notification.findMany({ where: { shipment: { trackingId: tid } }, orderBy: { createdAt: 'asc' } })).map((n) => n.step)
+    expect(steps).toEqual(['REGISTERED', 'LOADING', 'IN_TRANSIT', 'ARRIVED'])
   })
 })
 

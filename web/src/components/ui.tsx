@@ -5,7 +5,7 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 
 type Variant = 'primary' | 'dark' | 'ghost' | 'outline' | 'danger'
 const variants: Record<Variant, string> = {
-  primary: 'bg-electric text-white hover:bg-electric-600 shadow-sm shadow-electric/25',
+  primary: 'bg-brand text-white hover:bg-brand-600 shadow-sm shadow-brand/25',
   dark: 'bg-deep text-white hover:bg-deep-800',
   ghost: 'text-ink hover:bg-slate-100',
   outline: 'border border-line bg-surface text-ink hover:border-slate-300 hover:bg-slate-50',
@@ -43,7 +43,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
           id={inputId}
           className={cx(
             'h-11 w-full rounded-xl border bg-surface px-3.5 text-sm text-ink placeholder:text-slate-400 transition focus:outline-none focus:ring-4',
-            error ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : 'border-line focus:border-electric focus:ring-electric/15',
+            error ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : 'border-line focus:border-brand focus:ring-brand/15',
             className,
           )}
           {...rest}
@@ -59,7 +59,7 @@ export function Select({ label, className, children, ...rest }: SelectHTMLAttrib
     <label className="block">
       {label && <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>}
       <select
-        className={cx('h-11 w-full cursor-pointer rounded-xl border border-line bg-surface px-3 text-sm text-ink focus:border-electric focus:outline-none focus:ring-4 focus:ring-electric/15', className)}
+        className={cx('h-11 w-full cursor-pointer rounded-xl border border-line bg-surface px-3 text-sm text-ink focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/15', className)}
         {...rest}
       >
         {children}
@@ -73,7 +73,7 @@ export function Card({ className, children }: { className?: string; children: Re
 }
 
 export function Spinner({ className }: { className?: string }) {
-  return <Loader2 className={cx('size-5 animate-spin text-electric', className)} />
+  return <Loader2 className={cx('size-5 animate-spin text-brand', className)} />
 }
 
 export function PageLoader() {
@@ -87,7 +87,7 @@ export function PageLoader() {
 export function Empty({ icon, title, text, action }: { icon: ReactNode; title: string; text?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center px-6 py-16 text-center">
-      <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-electric-50 text-electric">{icon}</div>
+      <div className="mb-4 grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand">{icon}</div>
       <p className="font-semibold text-ink">{title}</p>
       {text && <p className="mt-1 max-w-sm text-sm text-muted">{text}</p>}
       {action && <div className="mt-5">{action}</div>}
@@ -96,7 +96,7 @@ export function Empty({ icon, title, text, action }: { icon: ReactNode; title: s
 }
 
 export function Alert({ tone = 'error', children }: { tone?: 'error' | 'success' | 'info'; children: ReactNode }) {
-  const t = { error: 'bg-rose-50 text-rose-700 border-rose-100', success: 'bg-emerald-50 text-emerald-700 border-emerald-100', info: 'bg-electric-50 text-navy border-electric/15' }
+  const t = { error: 'bg-rose-50 text-rose-700 border-rose-100', success: 'bg-emerald-50 text-emerald-700 border-emerald-100', info: 'bg-brand-50 text-heading border-brand/15' }
   return <div role={tone === 'error' ? 'alert' : 'status'} className={cx('rounded-xl border px-4 py-3 text-sm', t[tone])}>{children}</div>
 }
 
@@ -104,7 +104,7 @@ export function Stat({ label, value, sub }: { label: string; value: ReactNode; s
   return (
     <Card className="p-5">
       <p className="text-xs font-medium uppercase tracking-wider text-muted">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-navy">{value}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-heading">{value}</p>
       {sub && <p className="mt-1 text-xs text-muted">{sub}</p>}
     </Card>
   )
