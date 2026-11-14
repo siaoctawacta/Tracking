@@ -1,0 +1,6 @@
+# Vercel héberge uniquement le site (web/). L’API tourne sur un serveur (voir le Guide technique) :
+# sans cette exclusion, Vercel traiterait le dossier api/ comme des fonctions serverless.
+/api
+/deploy
+/docs
+/brand

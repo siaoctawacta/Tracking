@@ -476,6 +476,21 @@
     <tr><td><code>update.sh</code></td><td>Mise à jour complète (section 7.1).</td></tr>
     <tr><td><code>backup.sh</code> · <code>cron.kader-cargo</code></td><td>Sauvegarde nocturne (section 7.2).</td></tr>
   </table>
+  <h2 id="t-64"><span class="n">6.4</span>Variante : site sur Vercel, API sur le serveur</h2>
+  <p>Vercel peut héberger le <strong>site</strong>, mais pas l’API : ses fonctions sont éphémères, la base SQLite et les photos y seraient perdues. Dans cette variante, l’API est installée sur le serveur comme ci-dessus (étapes 1 à 10) sous un sous-domaine, par exemple <code>api.kadercargo.com</code> dans le Caddyfile, et Vercel lui transmet les appels <code>/api/*</code>. Le site et l’API restent ainsi sur la même adresse, ce qu’exigent les cookies de session <code>SameSite=Strict</code>.</p>
+  <table>
+    <thead><tr><th style="width:30%">Fichier</th><th>Rôle</th></tr></thead>
+    <tr><td><code>vercel.json</code></td><td>Installe et construit uniquement <code>web/</code>, publie <code>web/dist</code>, transmet <code>/api/*</code> à l’API, renvoie les autres adresses vers <code>index.html</code>, ajoute les en-têtes de sécurité du site.</td></tr>
+    <tr><td><code>.vercelignore</code></td><td>Exclut <code>api/</code>, <code>deploy/</code>, <code>docs/</code>, <code>brand/</code> : sans lui, Vercel prendrait le dossier <code>api/</code> pour des fonctions serverless et le build échouerait.</td></tr>
+  </table>
+  <ol class="steps">
+    <li>Dans <code>vercel.json</code>, remplacez <code>https://api.kadercargo.com</code> par l’adresse réelle de l’API, puis publiez sur <code>main</code>.</li>
+    <li>Dans Vercel : <strong>Root Directory</strong> = racine du dépôt (laisser vide), aucun réglage de build à saisir (tout est dans <code>vercel.json</code>), domaine personnalisé <code>kadercargo.com</code>.</li>
+    <li>Sur le serveur, dans <code>api/.env</code> : <code>TRUST_PROXY=2</code> (Vercel puis Caddy) et <code>PUBLIC_WEB_URL</code> = l’adresse du site sur Vercel ; redémarrez l’API.</li>
+    <li>Vérifiez <code>https://kadercargo.com/api/v1/health</code>, une connexion, puis l’envoi d’une photo de contrôle.</li>
+  </ol>
+  <div class="callout warn"><b class="t">Points d’attention</b><p>Avec <code>TRUST_PROXY=1</code>, tous les visiteurs auraient l’adresse IP de Vercel et partageraient la limite de 5 essais de connexion. Avec <code>TRUST_PROXY=2</code>, quelqu’un qui appelle directement <code>api.kadercargo.com</code> pourrait fausser son adresse IP pour contourner cette limite : gardez des mots de passe robustes. Vérifiez aussi que l’envoi des photos (jusqu’à 5 Mo chacune) passe par le relais de Vercel. Si ces contraintes gênent, la solution la plus simple reste d’héberger site et API sur le même serveur avec Caddy (6.2).</p></div>
+
 </section>
 
 <!-- ========================================================= 7. EXPLOITATION -->
@@ -548,7 +563,7 @@
     <thead><tr><th style="width:34%">Variable</th><th style="width:22%">Production</th><th>Rôle</th></tr></thead>
     <tr><td><code>NODE_ENV</code></td><td><code>production</code></td><td>Cookies <code>__Host-</code> sécurisés, aucun <code>devCode</code>, secret obligatoire</td></tr>
     <tr><td><code>PORT</code></td><td><code>4000</code></td><td>Port local de l’API</td></tr>
-    <tr><td><code>TRUST_PROXY</code></td><td><code>1</code></td><td>Nombre de proxys devant l’API (Caddy)</td></tr>
+    <tr><td><code>TRUST_PROXY</code></td><td><code>1</code> (<code>2</code> derrière Vercel)</td><td>Nombre de proxys devant l’API (Caddy, ou Vercel + Caddy)</td></tr>
     <tr><td><code>DATABASE_URL</code></td><td><code>file:/var/lib/kader-cargo/kader.db</code></td><td>Base SQLite</td></tr>
     <tr><td><code>UPLOAD_DIR</code></td><td><code>/var/lib/kader-cargo/uploads</code></td><td>Photos de contrôle</td></tr>
     <tr><td><code>JWT_SECRET</code></td><td>48 octets aléatoires</td><td>Signature des sessions, clé HMAC des codes</td></tr>
