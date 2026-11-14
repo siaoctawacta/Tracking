@@ -410,6 +410,7 @@
     <li><strong>Base PostgreSQL</strong> : l’API se connecte via le <em>pooler</em> de Supabase. <code>DATABASE_URL</code> = « Transaction pooler » (port 6543, adapté aux fonctions serverless) ; <code>DIRECT_URL</code> = « Session pooler » (port 5432), utilisé par les migrations Prisma. Chaque instance garde au plus 2 connexions (<code>DB_POOL_MAX</code>).</li>
     <li><strong>Storage</strong> : bucket <strong>privé</strong> <code>photos</code> ; l’API y écrit et lit avec la clé <code>service_role</code> (ou une clé secrète <code>sb_secret_…</code>) via l’API REST de Storage (<code>server/src/lib/storage.ts</code>). Le navigateur n’accède jamais directement au bucket.</li>
     <li>Aucune autre fonctionnalité Supabase n’est utilisée (pas d’Auth Supabase, pas d’accès direct à la base depuis le navigateur) : l’authentification et les droits restent ceux de l’API.</li>
+    <li><strong>Row Level Security</strong> : Supabase publie le schéma <code>public</code> par son API REST avec la clé publique <code>anon</code>. La migration <code>enable_rls</code> active la RLS sur les 11 tables, sans aucune politique : ces accès ne renvoient rien. L’API se connecte en tant que propriétaire des tables, qui n’est pas soumis à la RLS. Toute nouvelle table doit recevoir la même instruction dans sa migration.</li>
   </ul>
 </section>
 
@@ -446,7 +447,7 @@
   <ol class="steps">
     <li><strong>Add New → Project</strong>, importez <code>siaoctawacta/Tracking</code>. Laissez le dossier racine (Root Directory) vide et ne saisissez aucune commande : tout est dans <code>vercel.json</code>.</li>
     <li><strong>Settings → Environment Variables</strong>, environnement <strong>Production</strong> : les variables du tableau ci-dessous.</li>
-    <li>Déployez (ou poussez sur <code>main</code>). Les migrations de la base sont appliquées automatiquement pendant le build des déploiements de production.</li>
+    <li>Déployez (ou poussez sur <code>main</code>). Les migrations de la base sont appliquées automatiquement pendant le build des déploiements de production : <strong>aucune table n’est à créer à la main</strong>. Dans Supabase, <strong>Table Editor</strong> doit ensuite afficher 11 tables : <code>User</code>, <code>RefreshToken</code>, <code>OtpCode</code>, <code>StaffNotification</code>, <code>Container</code>, <code>Shipment</code>, <code>ShipmentEvent</code>, <code>Photo</code>, <code>Notification</code>, <code>RateLimit</code> et <code>_prisma_migrations</code>. En secours seulement, sur une base vide : coller <code>docs/supabase/schema.sql</code> dans le <strong>SQL Editor</strong>.</li>
     <li><strong>Settings → Domains</strong> : ajoutez <code>kadercargo.com</code> et suivez les instructions DNS de Vercel ; mettez ensuite <code>PUBLIC_WEB_URL</code> à jour.</li>
     <li>Vérifiez <code>https://kadercargo.com/api/v1/health</code> → <code>{"ok":true}</code>, puis créez le premier administrateur (6.4).</li>
   </ol>
