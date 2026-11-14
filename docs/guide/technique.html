@@ -25,31 +25,32 @@
   </div>
 
   <h2 id="t-11"><span class="n">1.1</span>Vue d’ensemble</h2>
-  <p>L’application est <strong>découplée</strong> : une application monopage (SPA) React servie comme fichiers statiques, et une <strong>API REST JSON sans état</strong> en Node.js. Elles ne communiquent que par HTTPS, sous <code>/api/v1</code>. L’API ne génère aucun HTML ; la SPA ne contient aucune logique métier (prix, numéros de suivi, transitions de statut et droits sont décidés par l’API).</p>
+  <p>L’application est <strong>découplée</strong> : une application monopage (SPA) React servie comme fichiers statiques, et une <strong>API REST JSON sans état</strong> en Node.js, sous <code>/api/v1</code>. L’API ne génère aucun HTML ; la SPA ne contient aucune logique métier (prix, numéros de suivi, transitions de statut et droits sont décidés par l’API). En production, <strong>un seul déploiement Vercel</strong> sert le site (fichiers statiques sur le CDN) et l’API (une fonction serverless) sur la même adresse ; les données sont chez <strong>Supabase</strong> (PostgreSQL et stockage des photos).</p>
   <div class="arch">
-    <div class="box"><b>Navigateur</b>SPA React<br/>(fichiers statiques)</div>
-    <div class="arrow">HTTPS →</div>
-    <div class="box main"><b>Caddy</b>TLS Let’s Encrypt, en-têtes<br/><span style="color:var(--muted)">/ → web/dist · /api → :4000</span></div>
+    <div class="box"><b>Navigateur</b>site + API<br/>même adresse (HTTPS)</div>
+    <div class="arrow">→</div>
+    <div class="box main"><b>Vercel</b>CDN : site React<br/><span style="color:var(--muted)">/api/* → fonction Node.js (Express)</span></div>
     <div class="arrow">→</div>
     <div class="sub">
-      <div class="box"><b>API Express 5</b>systemd, 127.0.0.1:4000</div>
-      <div class="box"><b>SQLite + photos</b>/var/lib/kader-cargo</div>
+      <div class="box"><b>Supabase PostgreSQL</b>données (via le pooler)</div>
+      <div class="box"><b>Supabase Storage</b>photos (bucket privé)</div>
     </div>
   </div>
-  <p>Services externes appelés par l’API : WhatsApp (Twilio ou Meta Cloud API), SMTP (e-mails), clés publiques Google (connexion Google).</p>
+  <p>Services externes appelés par l’API : Supabase, WhatsApp (Twilio ou Meta Cloud API), SMTP (e-mails), clés publiques Google (connexion Google). La même API fonctionne aussi sur un serveur classique (section 6.4).</p>
 
   <h2 id="t-12"><span class="n">1.2</span>Pile technologique</h2>
   <div class="grid2">
     <table>
-      <thead><tr><th colspan="2">API — <code style="background:none;color:#fff">api/</code></th></tr></thead>
+      <thead><tr><th colspan="2">API — <code style="background:none;color:#fff">server/</code></th></tr></thead>
       <tr><td>Exécution</td><td>Node.js 22, TypeScript 7 (exécuté par tsx)</td></tr>
       <tr><td>Serveur HTTP</td><td>Express 5, helmet 8, cookie-parser, cors</td></tr>
-      <tr><td>Données</td><td>Prisma 7 + adaptateur better-sqlite3 (SQLite)</td></tr>
+      <tr><td>Données</td><td>Prisma 7 + adaptateur <code>pg</code> (PostgreSQL / Supabase)</td></tr>
       <tr><td>Validation</td><td>zod 4 (schémas <code>.strict()</code>)</td></tr>
       <tr><td>Sécurité</td><td>@node-rs/argon2, jsonwebtoken, jose, express-rate-limit 8</td></tr>
       <tr><td>Fichiers / PDF</td><td>multer 2, pdfkit, bwip-js (code-barres, QR)</td></tr>
       <tr><td>E-mail</td><td>nodemailer (SMTP)</td></tr>
-      <tr><td>Tests</td><td>vitest 5, supertest — 42 tests</td></tr>
+      <tr><td>Hébergement</td><td>Vercel (Build Output API, esbuild + @vercel/nft), @vercel/functions</td></tr>
+      <tr><td>Tests</td><td>vitest 5, supertest — 47 tests</td></tr>
     </table>
     <table>
       <thead><tr><th colspan="2">Site — <code style="background:none;color:#fff">web/</code></th></tr></thead>
@@ -65,23 +66,26 @@
 
   <h2 id="t-13"><span class="n">1.3</span>Organisation du dépôt</h2>
   <div class="tree">Tracking/
-├─ api/
+├─ server/
 │  ├─ prisma/schema.prisma      <span class="c"># modèle de données</span>
 │  ├─ prisma/migrations/        <span class="c"># migrations SQL versionnées</span>
 │  ├─ prisma/seed.ts            <span class="c"># données de démonstration (jamais en production)</span>
-│  ├─ scripts/                  <span class="c"># create-admin.ts, backup.mjs, init-env.mjs</span>
+│  ├─ scripts/                  <span class="c"># vercel-build.mjs, create-admin.ts, backup.mjs (pg_dump), init-env.mjs</span>
 │  ├─ src/app.ts                <span class="c"># Express : helmet, CORS, CSRF, routes /api/v1</span>
+│  ├─ src/vercel.ts             <span class="c"># point d’entrée de la fonction Vercel</span>
 │  ├─ src/config.ts             <span class="c"># lecture de l’environnement (.env)</span>
-│  ├─ src/routes/               <span class="c"># auth, account, tracking, shipments, containers, users, staffNotifications</span>
-│  ├─ src/lib/                  <span class="c"># security, otp, google, whatsapp, mailer, pdf, uploads, domain, workflow…</span>
+│  ├─ src/routes/               <span class="c"># auth, account, tracking, shipments, containers, users, staffNotifications, cron</span>
+│  ├─ src/lib/                  <span class="c"># security, otp, google, whatsapp, storage, rateLimitStore, background, pdf…</span>
 │  ├─ src/middleware/           <span class="c"># auth (JWT + rôles), csrf, errors</span>
-│  └─ test/                     <span class="c"># api, signup, whatsapp (.test.ts)</span>
+│  └─ test/                     <span class="c"># api, signup, whatsapp, platform (.test.ts)</span>
 ├─ web/
 │  ├─ src/pages/                <span class="c"># Home, Track, Login, Register, client/*, admin/*</span>
 │  ├─ src/components/           <span class="c"># UI, frise de statut, cloche de notifications…</span>
 │  ├─ src/lib/                  <span class="c"># api.ts (client HTTP), auth, theme, site.ts (coordonnées)</span>
 │  └─ public/                   <span class="c"># favicon, theme-init.js, _headers</span>
-├─ deploy/                      <span class="c"># Caddyfile, service systemd, update.sh, backup.sh, cron</span>
+├─ vercel.json · .vercelignore <span class="c"># déploiement Vercel</span>
+├─ docker-compose.yml           <span class="c"># PostgreSQL local (développement, tests)</span>
+├─ deploy/                      <span class="c"># variante serveur : Caddyfile, service systemd, update.sh, backup.sh</span>
 ├─ brand/                       <span class="c"># logo SVG/PNG + build-logo.mjs</span>
 └─ docs/                        <span class="c"># guides PDF, alertes WhatsApp, captures</span></div>
 
@@ -94,8 +98,9 @@
     <tr><td><code>Shipment</code></td><td>Colis : <code>trackingId</code> (unique), <code>mode</code> (SEA / AIR), <code>status</code>, <code>pieces</code>, <code>weightKg</code>, <code>volumeCbm</code>, <code>priceXof</code>, <code>clientName</code>, <code>clientPhone</code>, <code>clientEmail</code>, <code>containerId</code>.</td></tr>
     <tr><td><code>ShipmentEvent</code></td><td>Historique daté : <code>status</code>, <code>location</code>, <code>note</code>, auteur.</td></tr>
     <tr><td><code>Container</code></td><td>Lots : <code>code</code>, <code>mode</code>, <code>state</code> (OPEN / CLOSED), <code>departureAt</code>, <code>etaAt</code>, <code>closedAt</code>.</td></tr>
-    <tr><td><code>Photo</code></td><td>Photos de contrôle : <code>fileName</code> (UUID), <code>mimeType</code>, <code>size</code>.</td></tr>
+    <tr><td><code>Photo</code></td><td>Photos de contrôle : <code>fileName</code> (UUID, clé de l’objet dans Supabase Storage ou nom du fichier local), <code>mimeType</code>, <code>size</code>.</td></tr>
     <tr><td><code>Notification</code></td><td>Alertes WhatsApp : <code>step</code>, <code>to</code>, <code>body</code>, <code>status</code> (PENDING / SENT / SIMULATED / FAILED), <code>attempts</code>, <code>error</code>, <code>providerMessageId</code>.</td></tr>
+    <tr><td><code>RateLimit</code></td><td>Compteurs de limitation de débit partagés par toutes les instances : <code>key</code>, <code>hits</code>, <code>resetAt</code>.</td></tr>
     <tr><td><code>StaffNotification</code></td><td>Notifications du back-office : <code>type</code>, <code>title</code>, <code>body</code>, <code>link</code>, <code>roles</code> (destinataires).</td></tr>
   </table>
 
@@ -108,7 +113,7 @@
     <tr><td><code>ADMIN</code></td><td>Tous</td><td>Peut corriger en arrière : aucune alerte n’est alors envoyée</td></tr>
     <tr><td><code>CLIENT</code></td><td>Aucun</td><td>Lecture de ses propres colis uniquement</td></tr>
   </table>
-  <p>Numéro de suivi : <code>KC-AAAA-XXXXXX</code>, 6 caractères tirés par générateur cryptographique dans un alphabet de 32 signes sans 0/O ni 1/I (plus d’un milliard de combinaisons). Prix calculé par l’API : aérien au kg, maritime au m³, minimum de facturation (<code>api/src/lib/domain.ts</code>).</p>
+  <p>Numéro de suivi : <code>KC-AAAA-XXXXXX</code>, 6 caractères tirés par générateur cryptographique dans un alphabet de 32 signes sans 0/O ni 1/I (plus d’un milliard de combinaisons). Prix calculé par l’API : aérien au kg, maritime au m³, minimum de facturation (<code>server/src/lib/domain.ts</code>).</p>
 </section>
 
 <!-- ========================================================= 2. DÉVELOPPEMENT -->
@@ -122,9 +127,10 @@
 
   <h2 id="t-21"><span class="n">2.1</span>Démarrer en local</h2>
   <pre class="cmd"><span class="p">$ </span>git clone git@github.com:siaoctawacta/Tracking.git &amp;&amp; cd Tracking
-<span class="p">$ </span>npm run setup    <span class="c"># dépendances, api/.env (secret aléatoire), base SQLite + données de démo</span>
+<span class="p">$ </span>docker compose up -d   <span class="c"># PostgreSQL local (bases kader_cargo et kader_cargo_test)</span>
+<span class="p">$ </span>npm run setup    <span class="c"># dépendances, server/.env (secret aléatoire), migrations + données de démo</span>
 <span class="p">$ </span>npm run dev      <span class="c"># API :4000 + site http://localhost:5173 (proxy /api)</span></pre>
-  <p><code>npm run dev</code> commence par <code>npm run sync</code> : il installe les dépendances manquantes et applique les migrations en attente. Après un <code>git pull</code>, relancer <code>npm run dev</code> suffit.</p>
+  <p>Sans Docker, n’importe quel PostgreSQL convient : renseignez <code>DATABASE_URL</code> dans <code>server/.env</code> (un projet Supabase de développement fonctionne aussi). En local, les photos sont écrites dans <code>server/uploads</code>. <code>npm run dev</code> commence par <code>npm run sync</code> : il installe les dépendances manquantes et applique les migrations en attente. Après un <code>git pull</code>, relancer <code>npm run dev</code> suffit.</p>
   <table>
     <thead><tr><th style="width:30%">Compte de démonstration</th><th style="width:36%">Identifiant</th><th>Mot de passe</th></tr></thead>
     <tr><td>Administrateur</td><td><code>admin@kadercargo.com</code></td><td><code>Admin#Kader2026</code></td></tr>
@@ -140,28 +146,30 @@
     <tr><td><code>npm run setup</code></td><td>Installation complète + données de démo (<strong>efface la base locale</strong>)</td></tr>
     <tr><td><code>npm run dev</code> · <code>npm run sync</code></td><td>Synchronise dépendances et migrations, puis lance API + site</td></tr>
     <tr><td><code>npm test</code> · <code>npm run typecheck</code> · <code>npm run build</code></td><td>Tests de l’API, vérification TypeScript (api + web), build du site</td></tr>
-    <tr><td><code>npm --prefix api run db:migrate</code></td><td>Crée une migration après modification de <code>schema.prisma</code> (dev)</td></tr>
-    <tr><td><code>npm --prefix api run db:deploy</code></td><td>Applique les migrations en attente (sans perte de données)</td></tr>
-    <tr><td><code>npm --prefix api run db:seed</code></td><td>Réinitialise les données de démo (<strong>efface tout</strong>)</td></tr>
-    <tr><td><code>npm --prefix api run create-admin</code></td><td>Crée ou promeut un administrateur (production)</td></tr>
-    <tr><td><code>npm --prefix api run backup -- fichier.db</code></td><td>Sauvegarde cohérente de la base pendant le fonctionnement</td></tr>
+    <tr><td><code>npm --prefix server run db:migrate</code></td><td>Crée une migration après modification de <code>schema.prisma</code> (dev)</td></tr>
+    <tr><td><code>npm --prefix server run db:deploy</code></td><td>Applique les migrations en attente (sans perte de données)</td></tr>
+    <tr><td><code>npm --prefix server run db:seed</code></td><td>Réinitialise les données de démo (<strong>efface tout</strong>)</td></tr>
+    <tr><td><code>npm --prefix server run create-admin</code></td><td>Crée ou promeut un administrateur (production)</td></tr>
+    <tr><td><code>npm --prefix server run backup -- fichier.dump</code></td><td>Sauvegarde PostgreSQL (<code>pg_dump</code>, restaurable avec <code>pg_restore</code>)</td></tr>
+    <tr><td><code>node server/scripts/vercel-build.mjs</code></td><td>Build Vercel complet en local (<code>.vercel/output</code>)</td></tr>
     <tr><td><code>node brand/build-logo.mjs</code> · <code>node docs/guide/build-pdf.mjs</code></td><td>Régénère le logo · les guides PDF</td></tr>
   </table>
 
   <h2 id="t-23"><span class="n">2.3</span>Tests</h2>
-  <p>42 tests d’intégration (vitest + supertest) sur une base SQLite jetable (<code>test.db</code>, recréée à chaque lancement), dans <code>api/test/</code> :</p>
+  <p>47 tests d’intégration (vitest + supertest) sur une base PostgreSQL de test (<code>kader_cargo_test</code>, vidée et recréée à chaque lancement ; autre base via <code>TEST_DATABASE_URL</code>, dont le nom doit contenir « test »), dans <code>server/test/</code> :</p>
   <ul>
     <li><code>api.test.ts</code> — hachage Argon2id, CSRF, erreur identique utilisateur inconnu / mauvais mot de passe, limitation de connexion, drapeaux des cookies, rotation et réutilisation du refresh token, JWT falsifié, masquage du suivi public, droits par rôle, accès client limité à ses colis, fichiers non-images refusés, flux des lots, création de comptes.</li>
     <li><code>signup.test.ts</code> — inscription par téléphone et par e-mail, codes faux / verrouillage / délai de renvoi, non-divulgation des comptes existants, comptes en attente ou refusés bloqués, validation, liaison téléphone / e-mail / Google / mot de passe, connexion Google (jeton signé localement), flux de notifications et destinataires.</li>
     <li><code>whatsapp.test.ts</code> — rédaction des 6 messages, variables de modèles, une alerte par étape, aucune alerte en correction arrière, aperçu et renvoi, envoi Twilio et Meta contre un réseau simulé, enregistrement des erreurs.</li>
+    <li><code>platform.test.ts</code> — compteurs de limitation partagés entre instances, envoi des photos vers Supabase Storage (bucket privé, clé de service, contrôle d’accès avant lecture), route de maintenance protégée et purge.</li>
   </ul>
 
   <h2 id="t-24"><span class="n">2.4</span>Conventions</h2>
   <ul>
-    <li>Toute modification du modèle passe par une migration (<code>db:migrate</code>) versionnée dans <code>api/prisma/migrations/</code>. Après une migration, régénérer le client : <code>npx prisma generate</code> (fait automatiquement par <code>npm install</code>).</li>
+    <li>Toute modification du modèle passe par une migration (<code>db:migrate</code>) versionnée dans <code>server/prisma/migrations/</code>. Après une migration, régénérer le client : <code>npx prisma generate</code> (fait automatiquement par <code>npm install</code>).</li>
     <li>Chaque entrée de l’API est décrite par un schéma zod <code>.strict()</code> : un champ inconnu est refusé (<code>400 validation_error</code>).</li>
     <li>Les erreurs métier passent par <code>HttpError(statut, message, code)</code> ; les messages sont en français, destinés à l’utilisateur.</li>
-    <li>Les coordonnées affichées sont dans <code>web/src/lib/site.ts</code>, celles des messages et PDF dans <code>api/src/lib/company.ts</code>, les tarifs dans <code>api/src/lib/domain.ts</code>.</li>
+    <li>Les coordonnées affichées sont dans <code>web/src/lib/site.ts</code>, celles des messages et PDF dans <code>server/src/lib/company.ts</code>, les tarifs dans <code>server/src/lib/domain.ts</code>.</li>
   </ul>
 </section>
 
@@ -204,6 +212,7 @@
   <table>
     <thead><tr><th style="width:12%">Méthode</th><th style="width:36%">Route</th><th style="width:16%">Accès</th><th>Description</th></tr></thead>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/health</td><td class="acc">Public</td><td>Sonde de supervision : <code>{"ok":true}</code></td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/cron/maintenance</td><td class="acc">Bearer CRON_SECRET</td><td>Tâche quotidienne : relance des alertes bloquées, purge (codes, sessions, compteurs)</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/csrf</td><td class="acc">Public</td><td>Émet le jeton CSRF</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/options</td><td class="acc">Public</td><td>Options de connexion actives (ID client Google)</td></tr>
     <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/login</td><td class="acc">Public · 5/15 min</td><td><code>{identifier, password}</code> — téléphone ou e-mail</td></tr>
@@ -228,12 +237,12 @@
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments</td><td class="acc">Personnel</td><td>Liste filtrable : <code>q</code>, <code>status</code>, <code>mode</code>, <code>unassigned</code>, pagination</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/stats</td><td class="acc">Personnel</td><td>Compteurs par statut et mode, activité récente</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/mine</td><td class="acc">Client</td><td>Colis liés au téléphone / e-mail du client</td></tr>
-    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments</td><td class="acc">GZ · Admin</td><td>Réception (multipart, jusqu’à 8 photos) + alerte « Enregistré »</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments</td><td class="acc">GZ · Admin</td><td>Réception (JSON ; photos facultatives en multipart) + alerte « Enregistré »</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}</td><td class="acc">Personnel · client propriétaire</td><td>Détail, historique, photos (+ alertes pour le personnel)</td></tr>
     <tr><td><span class="method m-patch">PATCH</span></td><td class="path">/shipments/{id}/status</td><td class="acc">Personnel</td><td><code>{status, note?, location?}</code> selon le rôle</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/alert-preview</td><td class="acc">Personnel</td><td><code>?status=&amp;note=</code> — texte exact du message</td></tr>
     <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments/{id}/notifications/{nid}/resend</td><td class="acc">Personnel</td><td>Renvoi d’une alerte WhatsApp</td></tr>
-    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments/{id}/photos</td><td class="acc">GZ · Admin</td><td>Ajout de photos de contrôle</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments/{id}/photos</td><td class="acc">GZ · Admin</td><td>Ajout de photos (le site les compresse et en envoie une par requête)</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/photos/{photoId}</td><td class="acc">Personnel · propriétaire</td><td>Image (après contrôle d’accès)</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/invoice.pdf</td><td class="acc">Personnel · propriétaire</td><td>Facture A4</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/label.pdf</td><td class="acc">Personnel</td><td>Étiquette 100 × 150 mm (code-barres + QR)</td></tr>
@@ -330,7 +339,7 @@
   <ul>
     <li><strong>Injection SQL</strong> : uniquement des requêtes Prisma paramétrées, aucune requête SQL construite à la main.</li>
     <li><strong>Validation</strong> : schémas zod <code>.strict()</code> sur tous les corps et paramètres ; JSON limité à 100 Ko.</li>
-    <li><strong>Photos</strong> : JPEG / PNG / WebP uniquement, vérifiés par <strong>signature binaire</strong> (le type annoncé par le navigateur ne suffit pas) ; 5 Mo, 8 fichiers ; nom aléatoire (UUID), droits 600, servies après contrôle d’accès avec <code>X-Content-Type-Options: nosniff</code>.</li>
+    <li><strong>Photos</strong> : redimensionnées (1600 px) et recompressées en JPEG dans le navigateur, envoyées une par requête (limite de 4,5 Mo par requête sur Vercel) ; côté API, JPEG / PNG / WebP uniquement, vérifiés par <strong>signature binaire</strong>, 5 Mo maximum, nom aléatoire (UUID). Stockées dans un <strong>bucket Supabase privé</strong> (ou sur disque en droits 600) et servies uniquement par l’API après contrôle d’accès, avec <code>X-Content-Type-Options: nosniff</code>. La clé <code>service_role</code> ne quitte jamais le serveur.</li>
     <li><strong>XSS</strong> : React échappe tout le contenu ; aucune insertion de HTML brut ; CSP stricte sur le site.</li>
     <li><strong>Erreurs</strong> : aucune trace technique renvoyée au client (détails seulement dans le journal).</li>
   </ul>
@@ -339,7 +348,7 @@
   <table>
     <thead><tr><th style="width:20%">Réponse</th><th>En-têtes</th></tr></thead>
     <tr><td>API (helmet)</td><td><code>Content-Security-Policy: default-src 'none'; frame-ancestors 'none'</code>, <code>Strict-Transport-Security</code> (2 ans, preload), <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy: no-referrer</code>, <code>Cross-Origin-Resource-Policy: same-site</code>, pas de <code>X-Powered-By</code>.</td></tr>
-    <tr><td>Site (Caddy)</td><td>CSP <code>default-src 'self'</code> (scripts, styles et polices du site uniquement ; exceptions limitées à <code>accounts.google.com/gsi</code>), HSTS, <code>X-Frame-Options: DENY</code>, <code>nosniff</code>, <code>Permissions-Policy</code>. Le thème est appliqué par un script externe (<code>theme-init.js</code>) pour éviter tout script en ligne.</td></tr>
+    <tr><td>Site (Vercel / Caddy)</td><td>CSP <code>default-src 'self'</code> (scripts, styles et polices du site uniquement ; exceptions limitées à <code>accounts.google.com/gsi</code>), HSTS, <code>X-Frame-Options: DENY</code>, <code>nosniff</code>, <code>Permissions-Policy</code>. Le thème est appliqué par un script externe (<code>theme-init.js</code>) pour éviter tout script en ligne.</td></tr>
   </table>
 
   <h2 id="t-49"><span class="n">4.9</span>Limitation de débit</h2>
@@ -349,14 +358,14 @@
     <tr><td>Inscription, codes, Google</td><td>60 par 15 minutes (beaucoup de clients mobiles partagent une même IP d’opérateur) + limites par destinataire (4.4)</td></tr>
     <tr><td><code>GET /tracking/…</code></td><td>30 par minute</td></tr>
   </table>
-  <p>Derrière Caddy, <code>TRUST_PROXY=1</code> est indispensable pour que l’IP réelle du client soit utilisée.</p>
+  <p>Les compteurs sont stockés dans PostgreSQL (table <code>RateLimit</code>, une mise à jour atomique par requête) : la limite vaut pour l’ensemble des instances de la fonction Vercel, pas instance par instance. <code>TRUST_PROXY=1</code> (Vercel ou Caddy) est indispensable pour que l’IP réelle du client soit utilisée.</p>
 
   <h2 id="t-410"><span class="n">4.10</span>Limites connues et recommandations</h2>
   <ul>
-    <li><strong>Une seule instance</strong> : les compteurs de limitation sont en mémoire et la base est un fichier SQLite. Pour plusieurs serveurs : PostgreSQL (fournisseur Prisma + adaptateur <code>@prisma/adapter-pg</code>, nouvelles migrations) et un stockage partagé des compteurs.</li>
+    <li><strong>Connexion à la base</strong> : chiffrée (SSL) vers Supabase ; le certificat n’est vérifié que si <code>DATABASE_SSL=verify</code> et <code>DATABASE_CA_CERT</code> (certificat CA de Supabase, téléchargeable dans les réglages de la base) sont renseignés — recommandé.</li>
     <li><strong>Sans WhatsApp ni SMTP configurés</strong>, les codes sont écrits dans le journal du serveur (mode « simulé ») : configurer les fournisseurs avant d’ouvrir les inscriptions.</li>
     <li>Pas de double authentification pour le personnel : recommandé si l’équipe grandit (un code par e-mail à chaque connexion, par exemple).</li>
-    <li>Les codes et jetons expirés restent en base : une purge périodique est recommandée à terme (tables <code>OtpCode</code>, <code>RefreshToken</code>).</li>
+    <li>Les codes, jetons et compteurs expirés sont purgés chaque jour par la tâche de maintenance (<code>/cron/maintenance</code>).</li>
     <li>Les notifications du back-office sont lues par interrogation toutes les 10 secondes (simple et compatible avec une API sans état).</li>
   </ul>
 </section>
@@ -366,14 +375,14 @@
   <div class="part-head">
     <div class="num">05 / intégrations</div>
     <h1>Intégrations</h1>
-    <p>WhatsApp, e-mail et connexion Google : fonctionnement et configuration.</p>
-    <span class="tag">twilio · meta · smtp · google</span>
+    <p>Supabase, WhatsApp, e-mail et connexion Google : fonctionnement et configuration.</p>
+    <span class="tag">supabase · twilio · meta · smtp · google</span>
   </div>
 
   <h2 id="t-51"><span class="n">5.1</span>WhatsApp</h2>
-  <p>Code : <code>api/src/lib/whatsapp.ts</code>. Fournisseur choisi par <code>WHATSAPP_PROVIDER</code> ou détecté selon les identifiants présents ; sans identifiants : mode simulé.</p>
+  <p>Code : <code>server/src/lib/whatsapp.ts</code>. Fournisseur choisi par <code>WHATSAPP_PROVIDER</code> ou détecté selon les identifiants présents ; sans identifiants : mode simulé.</p>
   <ul>
-    <li><strong>Alertes d’étape</strong> : un message par étape franchie vers l’avant (y compris en masse), au plus un par étape et par colis ; envoi en arrière-plan, 3 tentatives (immédiate, +30 s, +2 min) ; après le dernier échec, notification <code>WHATSAPP_FAILED</code> aux administrateurs.</li>
+    <li><strong>Alertes d’étape</strong> : un message par étape franchie vers l’avant (y compris en masse), au plus un par étape et par colis. Envoi après la réponse HTTP (<code>waitUntil</code> sur Vercel), 3 tentatives (immédiate, +5 s, +20 s sur Vercel ; +30 s, +2 min sur un serveur) ; après le dernier échec, notification <code>WHATSAPP_FAILED</code> aux administrateurs. Une alerte restée en attente plus de 10 minutes est relancée par la tâche de maintenance quotidienne.</li>
     <li><strong>Codes et avis de compte</strong> : envoi immédiat (la réponse HTTP attend le résultat).</li>
     <li><strong>Meta</strong> : modèles approuvés nommés <code>{META_TEMPLATE_PREFIX}{étape}</code>, variables du corps <code>{{1}}</code> prénom, <code>{{2}}</code> numéro de suivi, <code>{{3}}</code> détail ; le modèle <code>kader_otp</code> (catégorie <em>Authentification</em>) porte aussi le code dans son bouton « Copier ».</li>
     <li><strong>Twilio</strong> : texte libre, ou modèles Content si <code>TWILIO_CONTENT_SIDS</code> associe une étape à un identifiant <code>HX…</code>.</li>
@@ -387,7 +396,7 @@
   <p>Les textes à soumettre à Meta ou Twilio sont dans <code>docs/whatsapp-alertes.md</code>.</p>
 
   <h2 id="t-52"><span class="n">5.2</span>E-mail</h2>
-  <p>Code : <code>api/src/lib/mailer.ts</code> (nodemailer, SMTP). Avec Gmail : validation en deux étapes, puis un <strong>mot de passe d’application</strong> dans <code>SMTP_PASS</code>, <code>SMTP_HOST=smtp.gmail.com</code>, port 465 sécurisé. Gmail limite le volume quotidien ; pour un volume plus important, utiliser un service d’envoi dédié (mêmes variables SMTP). Les e-mails sont envoyés en texte et en HTML aux couleurs de Kader Cargo.</p>
+  <p>Code : <code>server/src/lib/mailer.ts</code> (nodemailer, SMTP). Avec Gmail : validation en deux étapes, puis un <strong>mot de passe d’application</strong> dans <code>SMTP_PASS</code>, <code>SMTP_HOST=smtp.gmail.com</code>, port 465 sécurisé. Gmail limite le volume quotidien ; pour un volume plus important, utiliser un service d’envoi dédié (mêmes variables SMTP). Les e-mails sont envoyés en texte et en HTML aux couleurs de Kader Cargo.</p>
 
   <h2 id="t-53"><span class="n">5.3</span>Connexion Google</h2>
   <ol class="steps">
@@ -395,102 +404,97 @@
     <li><strong>Identifiants → ID client OAuth</strong>, type « Application Web », origine JavaScript autorisée : <code>https://kadercargo.com</code>.</li>
     <li>Renseigner <code>GOOGLE_CLIENT_ID</code> et redémarrer l’API. Le site le récupère via <code>GET /auth/options</code> : aucune reconstruction du site n’est nécessaire.</li>
   </ol>
+
+  <h2 id="t-54"><span class="n">5.4</span>Supabase</h2>
+  <ul>
+    <li><strong>Base PostgreSQL</strong> : l’API se connecte via le <em>pooler</em> de Supabase. <code>DATABASE_URL</code> = « Transaction pooler » (port 6543, adapté aux fonctions serverless) ; <code>DIRECT_URL</code> = « Session pooler » (port 5432), utilisé par les migrations Prisma. Chaque instance garde au plus 2 connexions (<code>DB_POOL_MAX</code>).</li>
+    <li><strong>Storage</strong> : bucket <strong>privé</strong> <code>photos</code> ; l’API y écrit et lit avec la clé <code>service_role</code> (ou une clé secrète <code>sb_secret_…</code>) via l’API REST de Storage (<code>server/src/lib/storage.ts</code>). Le navigateur n’accède jamais directement au bucket.</li>
+    <li>Aucune autre fonctionnalité Supabase n’est utilisée (pas d’Auth Supabase, pas d’accès direct à la base depuis le navigateur) : l’authentification et les droits restent ceux de l’API.</li>
+  </ul>
 </section>
 
 <!-- ========================================================= 6. DÉPLOIEMENT -->
-<section class="part" data-toc-part="6. Déploiement sur un serveur">
+<section class="part" data-toc-part="6. Déploiement : Vercel + Supabase">
   <div class="part-head">
     <div class="num">06 / déploiement</div>
-    <h1>Déploiement sur un serveur</h1>
-    <p>Installation complète sur Ubuntu 24.04 avec HTTPS, service système et sauvegardes.</p>
-    <span class="tag">ubuntu 24.04 · caddy · systemd</span>
+    <h1>Déploiement : Vercel + Supabase</h1>
+    <p>Site et API sur Vercel, données et photos chez Supabase : aucun serveur à administrer.</p>
+    <span class="tag">vercel · supabase · build output api</span>
   </div>
 
-  <div class="callout ok"><b class="t">Procédure testée</b><p>Les commandes ont été exécutées sur Ubuntu 24.04 avec les mêmes chemins : installation, HTTPS, création de l’administrateur, colis avec photo, PDF, mise à jour, sauvegarde et restauration. Le service systemd a été validé (<code>systemd-analyze verify</code>) et sa commande exécutée ; vérifiez son démarrage sur le serveur avec <code>systemctl status</code>. Remplacez <code>kadercargo.com</code> par votre domaine.</p></div>
+  <div class="callout ok"><b class="t">Ce qui a été vérifié</b><p>Le build a été exécuté avec la CLI officielle de Vercel (<code>vercel build</code>) sur une copie neuve du dépôt. La fonction produite a été testée dans un simulateur local reproduisant le routage, la limite de 4,5 Mo par requête et Supabase Storage : connexion, réception avec photos de 12 mégapixels compressées, PDF, limitation de débit et tâche de maintenance. Le déploiement réel sur votre compte reste à faire avec les étapes ci-dessous.</p></div>
 
   <h2 id="t-61"><span class="n">6.1</span>Prérequis</h2>
   <table>
     <thead><tr><th style="width:28%">Élément</th><th>Détail</th></tr></thead>
-    <tr><td><strong>Serveur (VPS)</strong></td><td>Ubuntu 24.04 LTS, 2 vCPU, 2 à 4 Go de RAM, 40 Go SSD, accès root en SSH.</td></tr>
-    <tr><td><strong>Nom de domaine</strong></td><td>Avec accès à la zone DNS.</td></tr>
-    <tr><td><strong>Code</strong></td><td>Dépôt privé <code>siaoctawacta/Tracking</code> : clé de déploiement (étape 5).</td></tr>
-    <tr><td><strong>Fournisseurs</strong></td><td>WhatsApp (Twilio ou Meta), compte Gmail pour l’envoi d’e-mails, Google Cloud (facultatif).</td></tr>
+    <tr><td><strong>Vercel</strong></td><td>Un compte relié au dépôt GitHub <code>siaoctawacta/Tracking</code>.</td></tr>
+    <tr><td><strong>Supabase</strong></td><td>Un projet (région Europe, la plus proche du Togo : Paris, Londres ou Francfort).</td></tr>
+    <tr><td><strong>Nom de domaine</strong></td><td>Facultatif (Vercel fournit une adresse <code>…vercel.app</code>).</td></tr>
+    <tr><td><strong>Fournisseurs</strong></td><td>WhatsApp (Twilio ou Meta), compte Gmail pour l’envoi d’e-mails, Google Cloud (facultatif) — partie 5.</td></tr>
   </table>
-  <p>Arborescence en production : code dans <code>/srv/kader-cargo</code> (propriété de root, lecture seule pour l’API), données dans <code>/var/lib/kader-cargo</code> (utilisateur système <code>kader</code>), sauvegardes dans <code>/var/backups/kader-cargo</code>.</p>
 
-  <h2 id="t-62"><span class="n">6.2</span>Installation pas à pas</h2>
-  <h3>Étape 1 — DNS</h3>
-  <p>Deux enregistrements <strong>A</strong> : <code>kadercargo.com</code> et <code>www.kadercargo.com</code> vers l’IP du serveur.</p>
-  <h3>Étape 2 — Système</h3>
-  <pre class="cmd"><span class="p">$ </span>ssh root@ADRESSE_IP_DU_SERVEUR
-<span class="p">$ </span>apt update &amp;&amp; apt upgrade -y
-<span class="p">$ </span>apt install -y git curl caddy build-essential python3 ufw
-<span class="p">$ </span>curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-<span class="p">$ </span>apt install -y nodejs &amp;&amp; node -v       <span class="c"># v22.x</span></pre>
-  <h3>Étape 3 — Pare-feu</h3>
-  <pre class="cmd"><span class="p">$ </span>ufw allow OpenSSH &amp;&amp; ufw allow 80,443/tcp &amp;&amp; ufw enable</pre>
-  <h3>Étape 4 — Utilisateur et données</h3>
-  <pre class="cmd"><span class="p">$ </span>useradd --system --home-dir /var/lib/kader-cargo --shell /usr/sbin/nologin kader
-<span class="p">$ </span>mkdir -p /var/lib/kader-cargo/uploads
-<span class="p">$ </span>chown -R kader:kader /var/lib/kader-cargo &amp;&amp; chmod 750 /var/lib/kader-cargo</pre>
-  <h3>Étape 5 — Code (clé de déploiement en lecture seule)</h3>
-  <pre class="cmd"><span class="p">$ </span>ssh-keygen -t ed25519 -f /root/.ssh/kader_deploy -N ""
-<span class="p">$ </span>cat /root/.ssh/kader_deploy.pub
-<span class="c"># → GitHub : Tracking › Settings › Deploy keys › Add deploy key (sans « Allow write access »)</span>
-<span class="p">$ </span>GIT_SSH_COMMAND="ssh -i /root/.ssh/kader_deploy" \
-    git clone git@github.com:siaoctawacta/Tracking.git /srv/kader-cargo
-<span class="p">$ </span>git -C /srv/kader-cargo config core.sshCommand "ssh -i /root/.ssh/kader_deploy"</pre>
-  <h3>Étape 6 — Configuration</h3>
-  <pre class="cmd"><span class="p">$ </span>cd /srv/kader-cargo &amp;&amp; cp deploy/env.production.example api/.env
-<span class="p">$ </span>node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"  <span class="c"># → JWT_SECRET</span>
-<span class="p">$ </span>nano api/.env              <span class="c"># JWT_SECRET, PUBLIC_WEB_URL, WhatsApp, SMTP (annexe A)</span>
-<span class="p">$ </span>chown root:kader api/.env &amp;&amp; chmod 640 api/.env</pre>
-  <h3>Étape 7 — Installation, base et premier administrateur</h3>
-  <pre class="cmd"><span class="p">$ </span>npm --prefix api ci &amp;&amp; npm --prefix web ci &amp;&amp; npm --prefix web run build
-<span class="p">$ </span>cd /srv/kader-cargo/api
-<span class="p">$ </span>runuser -u kader -- ./node_modules/.bin/prisma migrate deploy
-<span class="p">$ </span>runuser -u kader -- npm run create-admin -- --name "Kader" --email admin@kadercargo.com
-<span class="c">  Mot de passe (10 caractères min.) :     ← saisi sans affichage</span></pre>
-  <div class="callout warn"><b class="t">Jamais « npm run setup » ni « db:seed » en production</b><p>Ces commandes chargent les données de démonstration et <strong>effacent toutes les données</strong>.</p></div>
-  <h3>Étape 8 — Service systemd</h3>
-  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/kader-cargo-api.service /etc/systemd/system/
-<span class="p">$ </span>systemctl daemon-reload &amp;&amp; systemctl enable --now kader-cargo-api
-<span class="p">$ </span>systemctl status kader-cargo-api                 <span class="c"># active (running)</span>
-<span class="p">$ </span>curl http://127.0.0.1:4000/api/v1/health         <span class="c"># {"ok":true}</span></pre>
-  <p>Le service tourne sous l’utilisateur <code>kader</code>, redémarre automatiquement et est isolé (<code>ProtectSystem=strict</code>, écriture limitée à <code>/var/lib/kader-cargo</code>, aucune capacité, familles réseau restreintes) : <code>systemd-analyze security</code> le classe <strong>2.9 OK</strong>.</p>
-  <h3>Étape 9 — HTTPS avec Caddy</h3>
-  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/Caddyfile /etc/caddy/Caddyfile
-<span class="p">$ </span>nano /etc/caddy/Caddyfile        <span class="c"># remplacer kadercargo.com</span>
-<span class="p">$ </span>systemctl reload caddy</pre>
-  <h3>Étape 10 — Sauvegardes</h3>
-  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/cron.kader-cargo /etc/cron.d/kader-cargo
-<span class="p">$ </span>/srv/kader-cargo/deploy/backup.sh</pre>
-  <p>Ouvrez ensuite <code>https://kadercargo.com</code> et connectez-vous avec le compte administrateur (onglet « Mot de passe »).</p>
-
-  <h2 id="t-63"><span class="n">6.3</span>Fichiers du dossier deploy/</h2>
-  <table>
-    <thead><tr><th style="width:34%">Fichier</th><th>Rôle</th></tr></thead>
-    <tr><td><code>Caddyfile</code></td><td>Certificat HTTPS automatique, en-têtes de sécurité du site, fichiers statiques avec retour sur <code>index.html</code>, proxy <code>/api</code>, cache long des fichiers versionnés, redirection <code>www</code>.</td></tr>
-    <tr><td><code>kader-cargo-api.service</code></td><td>Service systemd isolé de l’API.</td></tr>
-    <tr><td><code>env.production.example</code></td><td>Modèle de configuration de production.</td></tr>
-    <tr><td><code>update.sh</code></td><td>Mise à jour complète (section 7.1).</td></tr>
-    <tr><td><code>backup.sh</code> · <code>cron.kader-cargo</code></td><td>Sauvegarde nocturne (section 7.2).</td></tr>
-  </table>
-  <h2 id="t-64"><span class="n">6.4</span>Variante : site sur Vercel, API sur le serveur</h2>
-  <p>Vercel peut héberger le <strong>site</strong>, mais pas l’API : ses fonctions sont éphémères, la base SQLite et les photos y seraient perdues. Dans cette variante, l’API est installée sur le serveur comme ci-dessus (étapes 1 à 10) sous un sous-domaine, par exemple <code>api.kadercargo.com</code> dans le Caddyfile, et Vercel lui transmet les appels <code>/api/*</code>. Le site et l’API restent ainsi sur la même adresse, ce qu’exigent les cookies de session <code>SameSite=Strict</code>.</p>
-  <table>
-    <thead><tr><th style="width:30%">Fichier</th><th>Rôle</th></tr></thead>
-    <tr><td><code>vercel.json</code></td><td>Installe et construit uniquement <code>web/</code>, publie <code>web/dist</code>, transmet <code>/api/*</code> à l’API, renvoie les autres adresses vers <code>index.html</code>, ajoute les en-têtes de sécurité du site.</td></tr>
-    <tr><td><code>.vercelignore</code></td><td>Exclut <code>api/</code>, <code>deploy/</code>, <code>docs/</code>, <code>brand/</code> : sans lui, Vercel prendrait le dossier <code>api/</code> pour des fonctions serverless et le build échouerait.</td></tr>
-  </table>
+  <h2 id="t-62"><span class="n">6.2</span>Préparer Supabase</h2>
   <ol class="steps">
-    <li>Dans <code>vercel.json</code>, remplacez <code>https://api.kadercargo.com</code> par l’adresse réelle de l’API, puis publiez sur <code>main</code>.</li>
-    <li>Dans Vercel : <strong>Root Directory</strong> = racine du dépôt (laisser vide), aucun réglage de build à saisir (tout est dans <code>vercel.json</code>), domaine personnalisé <code>kadercargo.com</code>.</li>
-    <li>Sur le serveur, dans <code>api/.env</code> : <code>TRUST_PROXY=2</code> (Vercel puis Caddy) et <code>PUBLIC_WEB_URL</code> = l’adresse du site sur Vercel ; redémarrez l’API.</li>
-    <li>Vérifiez <code>https://kadercargo.com/api/v1/health</code>, une connexion, puis l’envoi d’une photo de contrôle.</li>
+    <li>Créez le projet sur <strong>supabase.com</strong> et conservez le mot de passe de la base dans un gestionnaire de mots de passe.</li>
+    <li>Bouton <strong>Connect</strong> (en haut du projet) : copiez la chaîne <strong>Transaction pooler</strong> (port 6543) → <code>DATABASE_URL</code>, et la chaîne <strong>Session pooler</strong> (port 5432) → <code>DIRECT_URL</code>, en y remplaçant <code>[YOUR-PASSWORD]</code>.</li>
+    <li><strong>Storage → New bucket</strong> : nom <code>photos</code>, <strong>Public désactivé</strong> (bucket privé).</li>
+    <li><strong>Project Settings → API</strong> : copiez l’URL du projet → <code>SUPABASE_URL</code> et la clé <strong>service_role</strong> (ou une clé secrète) → <code>SUPABASE_SERVICE_ROLE_KEY</code>. Cette clé donne un accès complet : uniquement dans les variables d’environnement, jamais dans le code ni par message.</li>
+    <li><em>Recommandé</em> : dans les réglages de la base (section SSL), téléchargez le certificat CA ; collez son contenu dans <code>DATABASE_CA_CERT</code> et mettez <code>DATABASE_SSL=verify</code>.</li>
   </ol>
-  <div class="callout warn"><b class="t">Points d’attention</b><p>Avec <code>TRUST_PROXY=1</code>, tous les visiteurs auraient l’adresse IP de Vercel et partageraient la limite de 5 essais de connexion. Avec <code>TRUST_PROXY=2</code>, quelqu’un qui appelle directement <code>api.kadercargo.com</code> pourrait fausser son adresse IP pour contourner cette limite : gardez des mots de passe robustes. Vérifiez aussi que l’envoi des photos (jusqu’à 5 Mo chacune) passe par le relais de Vercel. Si ces contraintes gênent, la solution la plus simple reste d’héberger site et API sur le même serveur avec Caddy (6.2).</p></div>
 
+  <h2 id="t-63"><span class="n">6.3</span>Déployer sur Vercel</h2>
+  <ol class="steps">
+    <li><strong>Add New → Project</strong>, importez <code>siaoctawacta/Tracking</code>. Laissez le dossier racine (Root Directory) vide et ne saisissez aucune commande : tout est dans <code>vercel.json</code>.</li>
+    <li><strong>Settings → Environment Variables</strong>, environnement <strong>Production</strong> : les variables du tableau ci-dessous.</li>
+    <li>Déployez (ou poussez sur <code>main</code>). Les migrations de la base sont appliquées automatiquement pendant le build des déploiements de production.</li>
+    <li><strong>Settings → Domains</strong> : ajoutez <code>kadercargo.com</code> et suivez les instructions DNS de Vercel ; mettez ensuite <code>PUBLIC_WEB_URL</code> à jour.</li>
+    <li>Vérifiez <code>https://kadercargo.com/api/v1/health</code> → <code>{"ok":true}</code>, puis créez le premier administrateur (6.4).</li>
+  </ol>
+  <table>
+    <thead><tr><th style="width:34%">Variable (Production)</th><th>Valeur</th></tr></thead>
+    <tr><td><code>DATABASE_URL</code> · <code>DIRECT_URL</code></td><td>Transaction pooler · Session pooler (6.2)</td></tr>
+    <tr><td><code>JWT_SECRET</code></td><td>48 octets aléatoires : <code>node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"</code></td></tr>
+    <tr><td><code>SUPABASE_URL</code> · <code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>URL du projet · clé service_role (6.2)</td></tr>
+    <tr><td><code>CRON_SECRET</code></td><td>Une autre valeur aléatoire (protège la tâche de maintenance)</td></tr>
+    <tr><td><code>PUBLIC_WEB_URL</code> · <code>TRUST_PROXY</code></td><td><code>https://kadercargo.com</code> · <code>1</code></td></tr>
+    <tr><td>WhatsApp · SMTP · Google</td><td>Partie 5 et annexe A</td></tr>
+  </table>
+  <div class="callout warn"><b class="t">À ne pas faire</b><p>Ne définissez pas <code>NODE_ENV</code> sur Vercel : l’installation ignorerait les outils de build et le déploiement échouerait (la configuration de production est déjà appliquée automatiquement sur Vercel). Ne renseignez pas les variables de base pour l’environnement <em>Preview</em>, sauf avec un second projet Supabase : les déploiements de prévisualisation ne doivent pas toucher les données réelles.</p></div>
+
+  <h2 id="t-64"><span class="n">6.4</span>Premier administrateur</h2>
+  <p>Depuis un ordinateur disposant du dépôt et de Node.js 22, avec la chaîne <strong>Session pooler</strong> :</p>
+  <pre class="cmd"><span class="p">$ </span>npm --prefix server ci
+<span class="p">$ </span>DATABASE_URL="postgresql://postgres.xxxx:MOT_DE_PASSE@…pooler.supabase.com:5432/postgres" \
+    npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com
+<span class="c">  Mot de passe (10 caractères min.) :     ← saisi sans affichage</span></pre>
+  <div class="callout warn"><b class="t">Jamais « npm run setup » ni « db:seed » sur la base Supabase</b><p>Ces commandes chargent les données de démonstration et <strong>effacent toutes les données</strong>.</p></div>
+
+  <h2 id="t-65"><span class="n">6.5</span>Fonctionnement du build</h2>
+  <ul>
+    <li><code>vercel.json</code> installe <code>web/</code> et <code>server/</code> puis lance <code>server/scripts/vercel-build.mjs</code>, qui produit <code>.vercel/output</code> (Build Output API) : le site dans <code>static/</code>, l’API dans une seule fonction Node.js 22 (<code>functions/api.func</code>, empaquetée avec esbuild ; dépendances tracées par <code>@vercel/nft</code>, polices PDF ajoutées explicitement).</li>
+    <li>Routage : en-têtes de sécurité du site, fichiers statiques, <code>/api/*</code> → fonction, tout le reste → <code>index.html</code>.</li>
+    <li>Le dossier de l’API s’appelle <code>server/</code> et non <code>api/</code> : Vercel transformerait chaque fichier d’un dossier <code>api/</code> en fonction séparée.</li>
+    <li>Limites de la plateforme : 4,5 Mo par requête (d’où la compression des photos), 60 s par appel (<code>maxDuration</code>).</li>
+    <li>Tâche planifiée : <code>/api/v1/cron/maintenance</code> chaque jour à 5 h 15 UTC (fréquence compatible avec l’offre gratuite de Vercel). Vercel envoie automatiquement <code>CRON_SECRET</code>.</li>
+  </ul>
+
+  <h2 id="t-66"><span class="n">6.6</span>Variante : serveur dédié</h2>
+  <p>La même API fonctionne sur un serveur Ubuntu 24.04 avec Caddy (HTTPS) et systemd, grâce aux fichiers de <code>deploy/</code>. Base : la même base Supabase ou un PostgreSQL installé sur le serveur ; photos : Supabase Storage ou le disque (<code>UPLOAD_DIR</code>). Étapes principales :</p>
+  <pre class="cmd"><span class="p">$ </span>apt install -y git curl caddy build-essential postgresql-client ufw
+<span class="p">$ </span>curl -fsSL https://deb.nodesource.com/setup_22.x | bash - &amp;&amp; apt install -y nodejs
+<span class="p">$ </span>ufw allow OpenSSH &amp;&amp; ufw allow 80,443/tcp &amp;&amp; ufw enable
+<span class="p">$ </span>useradd --system --home-dir /var/lib/kader-cargo --shell /usr/sbin/nologin kader
+<span class="p">$ </span>mkdir -p /var/lib/kader-cargo/uploads &amp;&amp; chown -R kader:kader /var/lib/kader-cargo
+<span class="p">$ </span>git clone git@github.com:siaoctawacta/Tracking.git /srv/kader-cargo     <span class="c"># clé de déploiement</span>
+<span class="p">$ </span>cd /srv/kader-cargo &amp;&amp; cp deploy/env.production.example server/.env &amp;&amp; nano server/.env
+<span class="p">$ </span>chown root:kader server/.env &amp;&amp; chmod 640 server/.env
+<span class="p">$ </span>npm --prefix server ci &amp;&amp; npm --prefix web ci &amp;&amp; npm --prefix web run build
+<span class="p">$ </span>cd server &amp;&amp; runuser -u kader -- ./node_modules/.bin/prisma migrate deploy
+<span class="p">$ </span>runuser -u kader -- npm run create-admin -- --name "Kader" --email admin@kadercargo.com
+<span class="p">$ </span>cp ../deploy/kader-cargo-api.service /etc/systemd/system/ &amp;&amp; systemctl daemon-reload &amp;&amp; systemctl enable --now kader-cargo-api
+<span class="p">$ </span>cp ../deploy/Caddyfile /etc/caddy/Caddyfile &amp;&amp; nano /etc/caddy/Caddyfile &amp;&amp; systemctl reload caddy
+<span class="p">$ </span>cp ../deploy/cron.kader-cargo /etc/cron.d/kader-cargo</pre>
+  <p>Le service systemd est isolé (<code>systemd-analyze security</code> : 2.9 OK) et ne peut écrire que dans <code>/var/lib/kader-cargo</code>. Mises à jour : <code>deploy/update.sh</code> ; sauvegardes nocturnes : <code>deploy/backup.sh</code> (<code>pg_dump</code> + photos locales).</p>
 </section>
 
 <!-- ========================================================= 7. EXPLOITATION -->
@@ -499,53 +503,49 @@
     <div class="num">07 / exploitation</div>
     <h1>Exploitation</h1>
     <p>Mises à jour, sauvegardes et restauration, surveillance, dépannage et mise en production.</p>
-    <span class="tag">run · backup · monitor</span>
+    <span class="tag">deploy · backup · monitor</span>
   </div>
 
   <h2 id="t-71"><span class="n">7.1</span>Mettre à jour</h2>
-  <pre class="cmd"><span class="p">$ </span>/srv/kader-cargo/deploy/update.sh</pre>
-  <p>Enchaîne : sauvegarde → <code>git pull --ff-only origin main</code> → <code>npm ci</code> (api, web) → <code>prisma migrate deploy</code> (sans perte de données) → build du site → redémarrage → vérification de <code>/api/v1/health</code> pendant 20 s. En cas d’échec, il l’indique avec la commande du journal à consulter.</p>
+  <p>Sur Vercel, chaque fusion sur <code>main</code> déclenche un déploiement de production : build du site et de la fonction, migrations de la base, mise en ligne sans interruption. En cas de problème, <strong>Instant Rollback</strong> (onglet Deployments) remet en ligne la version précédente — sans annuler une migration déjà appliquée : les migrations doivent donc rester compatibles avec la version précédente (ajouts plutôt que suppressions).</p>
 
   <h2 id="t-72"><span class="n">7.2</span>Sauvegardes et restauration</h2>
-  <p><code>backup.sh</code> (chaque nuit à 2 h 30) crée dans <code>/var/backups/kader-cargo</code> une copie cohérente de la base faite <strong>pendant le fonctionnement</strong> (API de sauvegarde SQLite) et une archive des photos, puis supprime ce qui a plus de 14 jours.</p>
-  <div class="callout warn"><b class="t">Copie hors serveur</b><p>Copiez régulièrement ce dossier ailleurs (stockage cloud, autre serveur — par exemple avec <code>rclone</code> ou <code>scp</code>) et activez si possible les instantanés de votre hébergeur.</p></div>
-  <pre class="cmd"><span class="c"># Restauration (testée)</span>
-<span class="p">$ </span>systemctl stop kader-cargo-api
-<span class="p">$ </span>cp /var/lib/kader-cargo/kader.db /var/lib/kader-cargo/kader.db.avant-restauration
-<span class="p">$ </span>cp /var/backups/kader-cargo/kader-AAAA-MM-JJ_HHMM.db /var/lib/kader-cargo/kader.db
-<span class="p">$ </span>rm -f /var/lib/kader-cargo/kader.db-wal /var/lib/kader-cargo/kader.db-shm
-<span class="p">$ </span>tar -xzf /var/backups/kader-cargo/photos-AAAA-MM-JJ_HHMM.tar.gz -C /var/lib/kader-cargo
-<span class="p">$ </span>chown -R kader:kader /var/lib/kader-cargo
-<span class="p">$ </span>systemctl start kader-cargo-api</pre>
-  <p>Les données reviennent à l’état du moment de la sauvegarde.</p>
+  <ul>
+    <li><strong>Base</strong> : Supabase fait des sauvegardes selon votre offre (onglet <em>Database → Backups</em>). En complément, une copie indépendante, depuis n’importe quel ordinateur ayant le client PostgreSQL (version égale ou plus récente que celle de Supabase) :</li>
+  </ul>
+  <pre class="cmd"><span class="p">$ </span>DIRECT_URL="…Session pooler…" npm --prefix server run backup -- kader-2026-11-15.dump
+
+<span class="c"># Restauration (remplace les tables par celles de la sauvegarde — testée)</span>
+<span class="p">$ </span>pg_restore --clean --if-exists --no-owner --dbname "…Session pooler…" kader-2026-11-15.dump</pre>
+  <ul>
+    <li><strong>Photos</strong> : elles sont dans le bucket <code>photos</code>, qui n’est pas inclus dans les sauvegardes de la base. Téléchargez-le régulièrement (outils de Supabase ou tout outil compatible S3) si ces photos ont valeur de preuve.</li>
+    <li>Restauration : les données reviennent à l’état de la sauvegarde ; ce qui a été saisi après est perdu.</li>
+  </ul>
 
   <h2 id="t-73"><span class="n">7.3</span>Surveillance et dépannage</h2>
-  <pre class="cmd"><span class="p">$ </span>systemctl status kader-cargo-api      <span class="c"># état</span>
-<span class="p">$ </span>journalctl -u kader-cargo-api -f      <span class="c"># journal en direct</span>
-<span class="p">$ </span>journalctl -u caddy -n 50             <span class="c"># HTTPS</span>
-<span class="p">$ </span>curl https://kadercargo.com/api/v1/health</pre>
-  <p>Surveillez <code>/api/v1/health</code> avec un service externe (UptimeRobot, Better Stack…) pour être alerté d’une panne.</p>
+  <p>Journaux : Vercel → projet → <strong>Logs</strong> (appels de la fonction, alertes WhatsApp, erreurs) ; Supabase → <strong>Logs</strong> (base, Storage). Surveillez <code>/api/v1/health</code> avec un service externe (UptimeRobot, Better Stack…).</p>
   <table>
     <thead><tr><th style="width:32%">Symptôme</th><th>Cause probable et action</th></tr></thead>
-    <tr><td>Site inaccessible</td><td>DNS, pare-feu (<code>ufw status</code>), <code>systemctl status caddy</code>.</td></tr>
-    <tr><td>502 Bad Gateway</td><td>API arrêtée : lire le journal, puis <code>systemctl restart kader-cargo-api</code>.</td></tr>
-    <tr><td>« JWT_SECRET must be set… »</td><td>Secret absent ou trop court dans <code>api/.env</code>.</td></tr>
+    <tr><td>Build : échec pendant « Migrations »</td><td><code>DIRECT_URL</code> absente ou erronée ; utilisez la chaîne <em>Session pooler</em> (la connexion directe de Supabase n’est pas joignable depuis toutes les plateformes).</td></tr>
+    <tr><td>API : « self-signed certificate »</td><td><code>DATABASE_SSL=verify</code> sans le bon <code>DATABASE_CA_CERT</code> : recopiez le certificat CA de Supabase, ou repassez en <code>require</code>.</td></tr>
+    <tr><td>API : erreur 500 au démarrage</td><td>Variable manquante (<code>JWT_SECRET</code>, <code>DATABASE_URL</code>) : voir les journaux Vercel.</td></tr>
+    <tr><td>Photos : échec d’envoi</td><td><code>SUPABASE_URL</code> / clé erronées ou bucket <code>photos</code> absent ; message détaillé dans les journaux.</td></tr>
+    <tr><td>Photo refusée (413)</td><td>Fichier non compressé de plus de 4,5 Mo envoyé hors du site.</td></tr>
     <tr><td>Alertes « Simulé »</td><td>Aucun fournisseur WhatsApp configuré.</td></tr>
-    <tr><td>Alertes « Échec »</td><td>Identifiants, modèles non approuvés ou numéro invalide : message d’erreur dans la fiche du colis et dans le journal.</td></tr>
-    <tr><td>E-mails non reçus</td><td>Mot de passe d’application Gmail, dossier spam, journal (<code>[otp] delivery failed</code>).</td></tr>
-    <tr><td>Bouton Google absent</td><td><code>GOOGLE_CLIENT_ID</code> vide ou origine non autorisée dans Google Cloud.</td></tr>
-    <tr><td>Polices ou styles bloqués</td><td>CSP du Caddyfile modifiée : la remettre telle que fournie.</td></tr>
+    <tr><td>Alertes « Échec »</td><td>Identifiants, modèles non approuvés ou numéro invalide : erreur dans la fiche du colis.</td></tr>
+    <tr><td>Tâche de maintenance inactive</td><td><code>CRON_SECRET</code> absent : la route répond 404 ; vérifiez l’onglet <em>Cron Jobs</em> de Vercel.</td></tr>
+    <tr><td>Bouton Google absent</td><td><code>GOOGLE_CLIENT_ID</code> vide ou domaine non autorisé dans Google Cloud.</td></tr>
   </table>
 
   <h2 id="t-74"><span class="n">7.4</span>Check-list de mise en production</h2>
   <ul>
-    <li><code>NODE_ENV=production</code>, <code>JWT_SECRET</code> unique et secret, <code>api/.env</code> en 640 (root:kader).</li>
-    <li>SSH par clé uniquement, mot de passe root désactivé, <code>unattended-upgrades</code> actif, pare-feu limité à SSH/80/443.</li>
+    <li><code>JWT_SECRET</code> et <code>CRON_SECRET</code> uniques ; clé <code>service_role</code> uniquement dans les variables Vercel.</li>
+    <li>Bucket <code>photos</code> privé ; SSL vérifié (<code>DATABASE_SSL=verify</code>) recommandé.</li>
+    <li>Variables de base absentes de l’environnement Preview (ou second projet Supabase).</li>
     <li>WhatsApp et SMTP configurés et testés <strong>avant</strong> d’ouvrir les inscriptions ; modèles approuvés.</li>
-    <li><code>PUBLIC_WEB_URL</code> et <code>TRUST_PROXY=1</code> renseignés.</li>
-    <li>Sauvegarde nocturne active, copiée hors serveur, restauration testée.</li>
-    <li>Un compte nominatif par employé ; désactivation au départ.</li>
-    <li>Supervision externe de <code>/api/v1/health</code>.</li>
+    <li><code>PUBLIC_WEB_URL</code> à jour après l’ajout du domaine.</li>
+    <li>Sauvegarde indépendante (<code>pg_dump</code>) planifiée et une restauration testée ; copie du bucket photos.</li>
+    <li>Un compte nominatif par employé ; désactivation au départ. Supervision de <code>/api/v1/health</code>.</li>
   </ul>
 </section>
 
@@ -555,44 +555,46 @@
     <div class="num">annexes</div>
     <h1>Référence de configuration</h1>
     <p>Variables d’environnement et commandes utiles.</p>
-    <span class="tag">api/.env</span>
+    <span class="tag">vercel env · server/.env</span>
   </div>
 
-  <h2 id="t-a"><span class="n">A</span>Variables d’environnement (api/.env)</h2>
+  <h2 id="t-a"><span class="n">A</span>Variables d’environnement</h2>
   <table>
     <thead><tr><th style="width:34%">Variable</th><th style="width:22%">Production</th><th>Rôle</th></tr></thead>
-    <tr><td><code>NODE_ENV</code></td><td><code>production</code></td><td>Cookies <code>__Host-</code> sécurisés, aucun <code>devCode</code>, secret obligatoire</td></tr>
-    <tr><td><code>PORT</code></td><td><code>4000</code></td><td>Port local de l’API</td></tr>
-    <tr><td><code>TRUST_PROXY</code></td><td><code>1</code> (<code>2</code> derrière Vercel)</td><td>Nombre de proxys devant l’API (Caddy, ou Vercel + Caddy)</td></tr>
-    <tr><td><code>DATABASE_URL</code></td><td><code>file:/var/lib/kader-cargo/kader.db</code></td><td>Base SQLite</td></tr>
-    <tr><td><code>UPLOAD_DIR</code></td><td><code>/var/lib/kader-cargo/uploads</code></td><td>Photos de contrôle</td></tr>
+    <tr><td><code>DATABASE_URL</code></td><td>Transaction pooler</td><td>Connexion de l’application (PostgreSQL)</td></tr>
+    <tr><td><code>DIRECT_URL</code></td><td>Session pooler</td><td>Migrations, sauvegardes</td></tr>
+    <tr><td><code>DATABASE_SSL</code> · <code>DATABASE_CA_CERT</code></td><td><code>verify</code> + certificat</td><td>Chiffrement et vérification du certificat (vide = chiffré sans vérification pour Supabase)</td></tr>
+    <tr><td><code>DB_POOL_MAX</code></td><td>— (2 sur Vercel)</td><td>Connexions par instance</td></tr>
+    <tr><td><code>SUPABASE_URL</code> · <code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>projet Supabase</td><td>Photos dans Supabase Storage (vide = disque local)</td></tr>
+    <tr><td><code>SUPABASE_STORAGE_BUCKET</code></td><td><code>photos</code></td><td>Nom du bucket privé</td></tr>
     <tr><td><code>JWT_SECRET</code></td><td>48 octets aléatoires</td><td>Signature des sessions, clé HMAC des codes</td></tr>
-    <tr><td><code>LOGIN_RATE_LIMIT</code></td><td><code>5</code></td><td>Essais de mot de passe par IP / 15 min</td></tr>
+    <tr><td><code>CRON_SECRET</code></td><td>valeur aléatoire</td><td>Protège <code>/api/v1/cron/maintenance</code></td></tr>
     <tr><td><code>PUBLIC_WEB_URL</code></td><td><code>https://kadercargo.com</code></td><td>Liens dans les messages et e-mails</td></tr>
-    <tr><td><code>CORS_ORIGINS</code></td><td>vide</td><td>Seulement si le site est servi depuis une autre origine</td></tr>
-    <tr><td><code>COOKIE_SECURE</code></td><td>— (forcé)</td><td>Développement uniquement</td></tr>
-    <tr><td><code>WHATSAPP_PROVIDER</code></td><td><code>twilio</code> / <code>meta</code></td><td>Choix explicite du fournisseur</td></tr>
-    <tr><td><code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>, <code>TWILIO_WHATSAPP_FROM</code>, <code>TWILIO_CONTENT_SIDS</code></td><td>selon compte</td><td>Twilio (modèles en JSON : <code>{"OTP":"HX…"}</code>)</td></tr>
-    <tr><td><code>META_WHATSAPP_TOKEN</code>, <code>META_WHATSAPP_PHONE_NUMBER_ID</code>, <code>META_TEMPLATE_PREFIX</code>, <code>META_TEMPLATE_LANGUAGE</code></td><td>selon compte</td><td>Meta Cloud API (préfixe <code>kader_</code>, langue <code>fr</code>)</td></tr>
+    <tr><td><code>TRUST_PROXY</code></td><td><code>1</code></td><td>Proxy devant l’API (Vercel ou Caddy)</td></tr>
+    <tr><td><code>LOGIN_RATE_LIMIT</code></td><td><code>5</code></td><td>Essais de mot de passe par IP / 15 min</td></tr>
+    <tr><td><code>NODE_ENV</code> · <code>PORT</code> · <code>UPLOAD_DIR</code></td><td>serveur dédié uniquement</td><td>Mode production, port local, photos sur disque (inutiles sur Vercel)</td></tr>
+    <tr><td><code>CORS_ORIGINS</code> · <code>COOKIE_SECURE</code></td><td>vide</td><td>Origines externes (inutile : même adresse) · développement</td></tr>
+    <tr><td><code>WHATSAPP_PROVIDER</code>, <code>TWILIO_*</code>, <code>META_*</code></td><td>selon compte</td><td>Envoi WhatsApp (partie 5)</td></tr>
     <tr><td><code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURE</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>MAIL_FROM</code></td><td>Gmail : 465, true</td><td>Envoi d’e-mails</td></tr>
     <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>facultatif</td><td>Connexion Google</td></tr>
   </table>
 
   <h2 id="t-b"><span class="n">B</span>Commandes utiles</h2>
-  <pre class="cmd"><span class="c"># Créer un autre administrateur / réinitialiser son mot de passe</span>
-<span class="p">$ </span>cd /srv/kader-cargo/api &amp;&amp; runuser -u kader -- npm run create-admin -- --name "Nom" --email nom@kadercargo.com
+  <pre class="cmd"><span class="c"># Créer un administrateur / réinitialiser son mot de passe (base Supabase, Session pooler)</span>
+<span class="p">$ </span>DATABASE_URL="…" npm --prefix server run create-admin -- --name "Nom" --email nom@kadercargo.com
 
-<span class="c"># Sauvegarde manuelle</span>
-<span class="p">$ </span>/srv/kader-cargo/deploy/backup.sh
+<span class="c"># Appliquer les migrations à la main</span>
+<span class="p">$ </span>cd server &amp;&amp; DIRECT_URL="…" npx prisma migrate deploy
 
-<span class="c"># Redémarrer après une modification de api/.env</span>
-<span class="p">$ </span>systemctl restart kader-cargo-api
+<span class="c"># Sauvegarde / restauration</span>
+<span class="p">$ </span>DIRECT_URL="…" npm --prefix server run backup -- kader.dump
+<span class="p">$ </span>pg_restore --clean --if-exists --no-owner --dbname "…" kader.dump
 
-<span class="c"># Vérifier la configuration Caddy avant de la recharger</span>
-<span class="p">$ </span>caddy validate --config /etc/caddy/Caddyfile
+<span class="c"># Reproduire le build Vercel en local</span>
+<span class="p">$ </span>node server/scripts/vercel-build.mjs        <span class="c"># → .vercel/output</span>
 
-<span class="c"># Niveau d’isolation du service</span>
-<span class="p">$ </span>systemd-analyze security kader-cargo-api</pre>
+<span class="c"># Lancer la maintenance à la main</span>
+<span class="p">$ </span>curl -H "Authorization: Bearer $CRON_SECRET" https://kadercargo.com/api/v1/cron/maintenance</pre>
 </section>
 
 </body>

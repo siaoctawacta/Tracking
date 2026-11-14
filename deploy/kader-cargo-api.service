@@ -9,7 +9,7 @@ Wants=network-online.target
 Type=simple
 User=kader
 Group=kader
-WorkingDirectory=/srv/kader-cargo/api
+WorkingDirectory=/srv/kader-cargo/server
 ExecStart=/usr/bin/node --env-file=.env --import tsx src/server.ts
 Restart=always
 RestartSec=5

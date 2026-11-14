@@ -1,0 +1,16 @@
+# PostgreSQL local pour le développement et les tests :  docker compose up -d
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kader
+      POSTGRES_PASSWORD: kader
+      POSTGRES_DB: kader_cargo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./server/scripts/create-test-db.sql:/docker-entrypoint-initdb.d/01-test-db.sql:ro
+volumes:
+  pgdata:

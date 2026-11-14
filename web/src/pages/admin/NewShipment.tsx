@@ -5,6 +5,7 @@ import { BackLink, PageHeader } from '../../components/AppShell'
 import { Alert, Button, Card, Input, cx } from '../../components/ui'
 import { api, ApiError } from '../../lib/api'
 import { fcfa } from '../../lib/format'
+import { MAX_ORIGINAL_BYTES, uploadPhotos } from '../../lib/photos'
 import type { Mode, Shipment } from '../../lib/types'
 
 const TARIFFS = { SEA_PER_CBM: 250_000, AIR_PER_KG: 9_500, MIN_CHARGE: 10_000 }
@@ -17,6 +18,8 @@ export default function NewShipment() {
   const [error, setError] = useState<ApiError | null>(null)
   const [busy, setBusy] = useState(false)
   const [created, setCreated] = useState<Shipment | null>(null)
+  const [progress, setProgress] = useState('')
+  const [photoWarning, setPhotoWarning] = useState('')
 
   const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const n = (v: string) => Number(v.replace(',', '.')) || 0
@@ -27,17 +30,22 @@ export default function NewShipment() {
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const fd = new FormData()
-    fd.set('mode', mode)
-    for (const [k, v] of Object.entries(form)) fd.set(k, k === 'weightKg' || k === 'volumeCbm' ? String(n(v)) : v)
-    files.forEach((f) => fd.append('photos', f))
+    setPhotoWarning('')
+    const body: Record<string, unknown> = { mode }
+    for (const [k, v] of Object.entries(form)) body[k] = k === 'weightKg' || k === 'volumeCbm' ? n(v) : k === 'pieces' ? Number(v) || 1 : v
     try {
-      const r = await api.post<{ shipment: Shipment }>('/shipments', fd)
+      const r = await api.post<{ shipment: Shipment }>('/shipments', body)
+      if (files.length) {
+        // Photos go one by one, compressed, so no request exceeds the hosting size limit.
+        const failed = await uploadPhotos(r.shipment.id, files, (done, total) => setProgress(`Photos : ${done}/${total}`))
+        if (failed) setPhotoWarning(`${failed} photo${failed > 1 ? 's' : ''} n’${failed > 1 ? 'ont' : 'a'} pas pu être envoyée${failed > 1 ? 's' : ''}. Ajoutez-la${failed > 1 ? 's' : ''} depuis la fiche du colis.`)
+      }
       setCreated(r.shipment)
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError(0, 'network', 'Erreur réseau'))
     } finally {
       setBusy(false)
+      setProgress('')
     }
   }
 
@@ -47,6 +55,7 @@ export default function NewShipment() {
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-emerald-500 text-white"><Check className="size-7" strokeWidth={3} /></span>
         <h1 className="mt-6 text-2xl font-bold text-heading">Colis enregistré</h1>
         <p className="mt-2 text-muted">Le client a été notifié sur WhatsApp ({created.clientPhone}).</p>
+        {photoWarning && <div className="mt-4 text-left"><Alert tone="info">{photoWarning}</Alert></div>}
         <p className="mt-8 rounded-2xl border border-dashed border-brand/40 bg-brand-50 py-5 text-3xl font-extrabold tracking-wider text-heading">{created.trackingId}</p>
         <p className="mt-3 text-sm text-muted">Montant : <span className="font-semibold text-heading">{fcfa(created.priceXof)}</span></p>
         <div className="mt-8 flex flex-wrap justify-center gap-2">
@@ -99,7 +108,7 @@ export default function NewShipment() {
             <p className="text-xs font-medium uppercase tracking-wider text-muted">Montant estimé</p>
             <p className="mt-1 text-3xl font-extrabold tracking-tight text-heading">{fcfa(estimate)}</p>
             <p className="mt-1 text-xs text-muted">{mode === 'AIR' ? `${fcfa(TARIFFS.AIR_PER_KG)} / kg` : `${fcfa(TARIFFS.SEA_PER_CBM)} / m³`} — calculé définitivement par le serveur.</p>
-            <Button type="submit" loading={busy} className="mt-6 w-full" size="lg">Enregistrer & notifier</Button>
+            <Button type="submit" loading={busy} className="mt-6 w-full" size="lg">{progress || 'Enregistrer & notifier'}</Button>
           </Card>
         </div>
       </form>
@@ -120,7 +129,7 @@ export function PhotoPicker({ files, setFiles }: { files: File[]; setFiles: (f: 
 
   const add = (list: FileList | null) => {
     if (!list) return
-    const ok = Array.from(list).filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type) && f.size <= 5 * 1024 * 1024)
+    const ok = Array.from(list).filter((f) => /^image\/(jpeg|png|webp)$/.test(f.type) && f.size <= MAX_ORIGINAL_BYTES)
     setFiles([...files, ...ok].slice(0, 8))
   }
 
@@ -136,7 +145,7 @@ export function PhotoPicker({ files, setFiles }: { files: File[]; setFiles: (f: 
       >
         <ImagePlus className="size-6 text-brand" />
         <span className="mt-2 text-sm font-semibold text-heading">Ajouter des photos</span>
-        <span className="text-xs text-muted">JPEG, PNG ou WebP · 5 Mo max · 8 photos</span>
+        <span className="text-xs text-muted">JPEG, PNG ou WebP · 8 photos · compressées avant envoi</span>
       </button>
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => { add(e.target.files); e.target.value = '' }} />
       {previews.length > 0 && (
