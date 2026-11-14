@@ -1,0 +1,31 @@
+/* Guide technique — identité distincte du guide d'utilisation : sombre, dense, orientée code. */
+:root { --tech-bg: #1b1216; --tech-ink: #f3e6ea; --mono: ui-monospace, 'DejaVu Sans Mono', monospace; }
+body.tech { font-size: 9.6pt; }
+.tech .part-head { background: var(--tech-bg); border-left: 6pt solid var(--brand); border-radius: 6pt; padding: 18pt 22pt; }
+.tech .part-head .num { font-family: var(--mono); letter-spacing: 1pt; color: #ff9fbd; opacity: 1; text-transform: none; }
+.tech .part-head h1 { font-size: 21pt; }
+.tech .part-head svg { display: none; }
+.tech .part-head .tag { position: absolute; right: 20pt; top: 18pt; font-family: var(--mono); font-size: 8pt; color: #b89aa5; }
+.tech h2 { font-size: 13.5pt; border-bottom: 1px solid var(--line); padding-bottom: 4pt; }
+.tech h2 .n { font-family: var(--mono); font-size: 11pt; background: var(--tech-bg); color: #ff9fbd; padding: 1pt 5pt; border-radius: 4pt; }
+.tech h3 { font-size: 10.8pt; }
+.tech table { font-size: 8.6pt; }
+.tech th { background: var(--tech-bg); color: var(--tech-ink); }
+.tech td code, .tech p code, .tech li code { background: #f6eef1; color: #6b1230; }
+.tech .callout { border-radius: 4pt; }
+.method { display: inline-block; min-width: 38pt; text-align: center; font-family: var(--mono); font-size: 7.6pt; font-weight: 700; border-radius: 3pt; padding: 1pt 4pt; color: #fff; }
+.m-get { background: #0f766e; } .m-post { background: #8b1538; } .m-patch { background: #b45309; } .m-delete { background: #475569; }
+.path { font-family: var(--mono); font-size: 8.2pt; color: var(--heading); word-break: break-all; }
+.acc { font-size: 7.8pt; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.tree { background: #faf6f7; border: 1px solid var(--line); border-radius: 6pt; padding: 9pt 11pt; font-family: var(--mono); font-size: 8pt; line-height: 1.5; white-space: pre; margin: 6pt 0 11pt; break-inside: avoid; }
+.tree .c { color: var(--muted); }
+.kv { display: grid; grid-template-columns: 34% 1fr; border-top: 1px solid var(--line); }
+.kv > div { padding: 5pt 7pt; border-bottom: 1px solid var(--line); font-size: 8.8pt; }
+.kv > div:nth-child(odd) { font-weight: 700; color: var(--heading); }
+.tech .toc .tp { border-bottom-color: var(--tech-bg); }
+.tech .toc .row b { font-family: var(--mono); }
+/* Sommaire sur deux colonnes (45 entrées) */
+.tech .toc { columns: 2; column-gap: 16pt; }
+.tech .toc .tp { break-after: avoid; font-size: 9.6pt; margin-top: 7pt; }
+.tech .toc .tp:first-child { margin-top: 0; }
+.tech .toc .row { break-inside: avoid; font-size: 8.5pt; padding: 1.3pt 0; }

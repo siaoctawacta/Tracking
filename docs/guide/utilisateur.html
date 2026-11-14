@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8" />
-<title>Kader Cargo — Guide d’utilisation et de déploiement</title>
+<title>Kader Cargo — Guide d’utilisation</title>
 <link rel="stylesheet" href="guide.css" />
 </head>
 <body>
@@ -10,7 +10,7 @@
 <!-- ========================================================= SOMMAIRE -->
 <section>
   <h2 style="margin-top:0;font-size:20pt">Sommaire</h2>
-  <p class="lead">Ce guide accompagne la plateforme Kader Cargo. Les parties 1 à 3 s’adressent à l’équipe et aux clients ; la partie 4 au technicien chargé de l’installation sur un serveur.</p>
+  <p class="lead">Ce guide explique l’utilisation de la plateforme Kader Cargo au quotidien : par vos clients (partie 2) et par votre équipe à Guangzhou et à Lomé (partie 3). L’installation et l’hébergement font l’objet d’un document séparé, le <strong>Guide technique</strong>.</p>
   <div class="toc" id="toc"></div>
 </section>
 
@@ -25,7 +25,7 @@
 
   <h2 id="s-11"><span class="n">1.1</span>Trois espaces dans une seule application</h2>
   <table>
-    <tr><th style="width:24%">Espace</th><th style="width:22%">Pour qui</th><th>Ce qu’on y fait</th></tr>
+    <thead><tr><th style="width:24%">Espace</th><th style="width:22%">Pour qui</th><th>Ce qu’on y fait</th></tr></thead>
     <tr><td><strong>Site public</strong></td><td>Tout le monde</td><td>Présentation de Kader Cargo, tarifs, destinations, contacts, et <strong>suivi d’un colis</strong> avec son numéro, sans compte.</td></tr>
     <tr><td><strong>Espace client</strong></td><td>Clients inscrits et validés</td><td>Tous ses colis au même endroit, photos de contrôle prises à l’entrepôt, factures PDF, gestion de ses moyens de connexion.</td></tr>
     <tr><td><strong>Back-office</strong></td><td>Équipe Kader Cargo</td><td>Réception des colis à Guangzhou, lots/conteneurs, statuts, arrivée et remise à Lomé, validation des comptes, notifications sonores.</td></tr>
@@ -38,7 +38,7 @@
   <h2 id="s-12"><span class="n">1.2</span>Les rôles</h2>
   <p>Chaque personne se connecte avec son propre compte. Ce qu’elle peut faire dépend de son rôle ; les boutons inutiles pour son rôle ne s’affichent pas, et le serveur refuse toute action non autorisée.</p>
   <table>
-    <tr><th style="width:24%">Rôle</th><th>Responsabilités</th></tr>
+    <thead><tr><th style="width:24%">Rôle</th><th>Responsabilités</th></tr></thead>
     <tr><td><span class="badge">Client</span></td><td>Suivre ses colis, télécharger ses factures, voir les photos de contrôle.</td></tr>
     <tr><td><span class="badge">Entrepôt Guangzhou</span></td><td>Enregistrer les colis reçus (poids, volume, photos), imprimer les étiquettes, préparer et clôturer les lots, déclarer le départ (en vol / en mer).</td></tr>
     <tr><td><span class="badge">Agence Lomé</span></td><td>Déclarer l’arrivée à Lomé, valider le dédouanement (colis disponible), enregistrer la remise au client.</td></tr>
@@ -48,7 +48,7 @@
   <h2 id="s-13"><span class="n">1.3</span>Le parcours d’un colis</h2>
   <p>Un colis franchit six étapes. À chaque étape validée, <strong>le client reçoit automatiquement un message WhatsApp</strong> rédigé pour cette étape.</p>
   <table>
-    <tr><th style="width:5%" class="c">#</th><th style="width:25%">Étape</th><th style="width:22%">Validée par</th><th>Message WhatsApp reçu par le client</th></tr>
+    <thead><tr><th style="width:5%" class="c">#</th><th style="width:25%">Étape</th><th style="width:22%">Validée par</th><th>Message WhatsApp reçu par le client</th></tr></thead>
     <tr><td class="c">1</td><td><strong>Enregistré à Guangzhou</strong></td><td>Entrepôt Guangzhou</td><td>📦 Colis bien reçu — contenu, poids, montant, numéro de suivi</td></tr>
     <tr><td class="c">2</td><td><strong>Chargement</strong></td><td>Entrepôt Guangzhou</td><td>🗂️ Colis en préparation d’expédition</td></tr>
     <tr><td class="c">3</td><td><strong>En vol / En mer</strong></td><td>Entrepôt Guangzhou</td><td>✈️ Votre colis est en vol — date d’arrivée prévue</td></tr>
@@ -191,7 +191,7 @@
   </ol>
   <figure>
     <img src="img/gz-new.jpg" alt="Nouvelle réception" />
-    <figcaption>Formulaire de réception. Le montant définitif est calculé par le serveur.</figcaption>
+    <figcaption>Formulaire de réception. Le montant définitif est calculé automatiquement à l’enregistrement.</figcaption>
   </figure>
   <div class="grid2">
     <figure style="margin:0"><img src="img/gz-created.jpg" alt="Colis enregistré" /><figcaption>Le numéro de suivi est créé et le client prévenu sur WhatsApp.</figcaption></figure>
@@ -236,7 +236,7 @@
         <li><strong>Historique</strong> : la fiche du colis liste chaque alerte avec son état — <span class="badge">Envoyé</span> <span class="badge">En cours d’envoi</span> <span class="badge">Échec</span> <span class="badge">Simulé</span>.</li>
         <li><strong>Renvoyer</strong> : en cas d’échec (numéro erroné, téléphone éteint…), corrigez si besoin puis cliquez sur <strong>Renvoyer</strong>. Après 3 tentatives sans succès, l’administrateur est notifié.</li>
       </ul>
-      <p><span class="badge">Simulé</span> signifie qu’aucun compte WhatsApp n’est encore configuré : le message n’est pas réellement parti (voir partie 4.4).</p>
+      <p><span class="badge">Simulé</span> signifie qu’aucun compte WhatsApp n’est encore configuré : le message n’est pas réellement parti. Ce réglage est fait par votre technicien (voir le Guide technique).</p>
     </div>
     <figure style="margin:0"><img src="img/status-preview.jpg" alt="Aperçu du message" /><figcaption>Aperçu du message avant validation.</figcaption></figure>
   </div>
@@ -256,229 +256,61 @@
   </div>
 </section>
 
-<!-- ========================================================= PARTIE 4 -->
-<section class="part" data-toc-part="4. Déploiement sur un serveur">
-  <div class="part-head">
-    <div class="num">Partie 4</div>
-    <h1>Déploiement sur un serveur</h1>
-    <p>Pour le technicien : installation, configuration WhatsApp / e-mail / Google, mises à jour, sauvegardes et dépannage.</p>
-    <svg viewBox="0 0 64 64"><path fill="#fff" transform="rotate(45 34 30)" d="M34 8c2 0 3.2 2.6 3.2 5.4V24l15.3 8.6c.6.3.9.9.9 1.6v2.2l-16.2-4.6v10.6l4.6 3.6c.3.2.4.6.4.9v2l-7.2-2.2-7.2 2.2v-2c0-.3.2-.7.4-.9l4.6-3.6V31.8l-16.2 4.6v-2.2c0-.7.3-1.3.9-1.6L30.8 24V13.4C30.8 10.6 32 8 34 8z"/></svg>
-  </div>
-
-  <div class="callout ok"><b class="t">Procédure testée</b><p>Les commandes de cette partie ont été exécutées sur Ubuntu 24.04 : installation, HTTPS, création de l’administrateur, enregistrement d’un colis avec photo, PDF, mise à jour, sauvegarde et restauration. Les fichiers de configuration cités se trouvent dans le dossier <code>deploy/</code> du projet. Dans les exemples, remplacez <code>kadercargo.com</code> par votre nom de domaine.</p></div>
-
-  <h2 id="s-41"><span class="n">4.1</span>Ce qu’il faut</h2>
-  <table>
-    <tr><th style="width:28%">Élément</th><th>Détail</th></tr>
-    <tr><td><strong>Un serveur (VPS)</strong></td><td>Ubuntu 24.04 LTS, 2 vCPU, 2 à 4 Go de RAM, 40 Go de disque SSD, accès root en SSH (OVHcloud, Hetzner, DigitalOcean, Contabo… quelques euros par mois suffisent pour démarrer).</td></tr>
-    <tr><td><strong>Un nom de domaine</strong></td><td>Par exemple <code>kadercargo.com</code>, avec accès à sa zone DNS.</td></tr>
-    <tr><td><strong>Accès au code</strong></td><td>Le dépôt GitHub <code>siaoctawacta/Tracking</code> (privé) : une « clé de déploiement » sera ajoutée à l’étape 5.</td></tr>
-    <tr><td><strong>WhatsApp</strong></td><td>Un compte Twilio <em>ou</em> WhatsApp Business (Meta) avec un numéro dédié — indispensable pour les codes de connexion et les alertes.</td></tr>
-    <tr><td><strong>E-mail</strong></td><td>Une adresse Gmail avec la validation en deux étapes (pour les codes envoyés par e-mail).</td></tr>
-    <tr><td><strong>Google (facultatif)</strong></td><td>Un projet Google Cloud pour le bouton « Continuer avec Google ».</td></tr>
-  </table>
-
-  <h2 id="s-42"><span class="n">4.2</span>Architecture</h2>
-  <div class="arch">
-    <div class="box"><b>Clients &amp; équipe</b>Navigateur<br/>ordinateur / mobile</div>
-    <div class="arrow">HTTPS →</div>
-    <div class="box main"><b>Caddy</b>HTTPS automatique (Let’s Encrypt), en-têtes de sécurité<br/>
-      <span style="color:var(--muted)">/ → site (fichiers)<br/>/api → API</span></div>
-    <div class="arrow">→</div>
-    <div class="sub">
-      <div class="box"><b>API Node.js</b>service systemd, port 4000 local</div>
-      <div class="box"><b>Données</b>/var/lib/kader-cargo<br/>base SQLite + photos</div>
-    </div>
-  </div>
-  <p>Tout tient sur un seul serveur. L’API n’est jamais exposée directement : seul Caddy écoute sur Internet (ports 80 et 443). La base de données est un fichier SQLite, largement suffisant pour plusieurs milliers de colis par mois, sauvegardé chaque nuit.</p>
-
-  <h2 id="s-43"><span class="n">4.3</span>Installation pas à pas</h2>
-  <h3>Étape 1 — Pointer le domaine vers le serveur</h3>
-  <p>Dans la zone DNS du domaine, créez deux enregistrements <strong>A</strong> : <code>kadercargo.com</code> et <code>www.kadercargo.com</code> vers l’adresse IP du serveur. Attendez qu’ils soient actifs (quelques minutes à quelques heures).</p>
-
-  <h3>Étape 2 — Préparer le système</h3>
-  <pre class="cmd"><span class="c"># Connexion au serveur</span>
-<span class="p">$ </span>ssh root@ADRESSE_IP_DU_SERVEUR
-
-<span class="c"># Mises à jour et logiciels nécessaires</span>
-<span class="p">$ </span>apt update &amp;&amp; apt upgrade -y
-<span class="p">$ </span>apt install -y git curl caddy build-essential python3 ufw
-
-<span class="c"># Node.js 22 (dépôt officiel NodeSource)</span>
-<span class="p">$ </span>curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-<span class="p">$ </span>apt install -y nodejs
-<span class="p">$ </span>node -v        <span class="c"># doit afficher v22.x</span></pre>
-
-  <h3>Étape 3 — Pare-feu</h3>
-  <pre class="cmd"><span class="p">$ </span>ufw allow OpenSSH
-<span class="p">$ </span>ufw allow 80,443/tcp
-<span class="p">$ </span>ufw enable</pre>
-
-  <h3>Étape 4 — Utilisateur et dossiers de données</h3>
-  <pre class="cmd"><span class="c"># Utilisateur système dédié (sans connexion possible) qui fera tourner l’API</span>
-<span class="p">$ </span>useradd --system --home-dir /var/lib/kader-cargo --shell /usr/sbin/nologin kader
-<span class="p">$ </span>mkdir -p /var/lib/kader-cargo/uploads
-<span class="p">$ </span>chown -R kader:kader /var/lib/kader-cargo &amp;&amp; chmod 750 /var/lib/kader-cargo</pre>
-
-  <h3>Étape 5 — Récupérer le code</h3>
-  <p>Le dépôt étant privé, on crée une clé de déploiement en lecture seule :</p>
-  <pre class="cmd"><span class="p">$ </span>ssh-keygen -t ed25519 -f /root/.ssh/kader_deploy -N ""
-<span class="p">$ </span>cat /root/.ssh/kader_deploy.pub
-<span class="c"># → GitHub : dépôt Tracking › Settings › Deploy keys › Add deploy key
-#   coller la clé, NE PAS cocher « Allow write access »</span>
-<span class="p">$ </span>GIT_SSH_COMMAND="ssh -i /root/.ssh/kader_deploy" \
-    git clone git@github.com:siaoctawacta/Tracking.git /srv/kader-cargo
-<span class="p">$ </span>git -C /srv/kader-cargo config core.sshCommand "ssh -i /root/.ssh/kader_deploy"</pre>
-
-  <h3>Étape 6 — Configuration</h3>
-  <pre class="cmd"><span class="p">$ </span>cd /srv/kader-cargo
-<span class="p">$ </span>cp deploy/env.production.example api/.env
-
-<span class="c"># Générer le secret des sessions, puis le coller dans JWT_SECRET</span>
-<span class="p">$ </span>node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
-<span class="p">$ </span>nano api/.env        <span class="c"># JWT_SECRET, PUBLIC_WEB_URL, WhatsApp, e-mail (voir 4.4)</span>
-
-<span class="c"># Seuls root et l’utilisateur kader peuvent lire ce fichier</span>
-<span class="p">$ </span>chown root:kader api/.env &amp;&amp; chmod 640 api/.env</pre>
-
-  <h3>Étape 7 — Installer, construire, créer la base et l’administrateur</h3>
-  <pre class="cmd"><span class="p">$ </span>npm --prefix api ci
-<span class="p">$ </span>npm --prefix web ci
-<span class="p">$ </span>npm --prefix web run build
-
-<span class="p">$ </span>cd /srv/kader-cargo/api
-<span class="p">$ </span>runuser -u kader -- ./node_modules/.bin/prisma migrate deploy
-<span class="p">$ </span>runuser -u kader -- npm run create-admin -- --name "Kader" --email admin@kadercargo.com
-<span class="c">  Mot de passe (10 caractères min.) :      ← saisi sans affichage
-  Administrateur créé : Kader (admin@kadercargo.com)</span></pre>
-  <div class="callout warn"><b class="t">Ne jamais lancer « npm run setup » ni « db:seed » en production</b><p>Ces commandes installent les données de démonstration et <strong>effacent toutes les données existantes</strong>. Sur le serveur, utilisez uniquement <code>prisma migrate deploy</code> et <code>create-admin</code>.</p></div>
-
-  <h3>Étape 8 — Démarrer l’API (service systemd)</h3>
-  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/kader-cargo-api.service /etc/systemd/system/
-<span class="p">$ </span>systemctl daemon-reload
-<span class="p">$ </span>systemctl enable --now kader-cargo-api
-<span class="p">$ </span>systemctl status kader-cargo-api           <span class="c"># « active (running) »</span>
-<span class="p">$ </span>curl http://127.0.0.1:4000/api/v1/health   <span class="c"># {"ok":true}</span></pre>
-  <p>Le service redémarre automatiquement en cas de panne et au démarrage du serveur. Il est isolé : il ne peut écrire que dans <code>/var/lib/kader-cargo</code>.</p>
-
-  <h3>Étape 9 — HTTPS avec Caddy</h3>
-  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/Caddyfile /etc/caddy/Caddyfile
-<span class="p">$ </span>nano /etc/caddy/Caddyfile      <span class="c"># remplacer kadercargo.com par votre domaine</span>
-<span class="p">$ </span>systemctl reload caddy</pre>
-  <p>Caddy obtient et renouvelle automatiquement le certificat HTTPS. Ouvrez <code>https://kadercargo.com</code> et connectez-vous avec le compte administrateur, onglet « Mot de passe ».</p>
-
-  <h3>Étape 10 — Sauvegardes automatiques</h3>
-  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/cron.kader-cargo /etc/cron.d/kader-cargo
-<span class="p">$ </span>/srv/kader-cargo/deploy/backup.sh      <span class="c"># premier essai manuel</span></pre>
-  <p>Une sauvegarde de la base et des photos est faite chaque nuit à 2 h 30 dans <code>/var/backups/kader-cargo</code> (conservation 14 jours).</p>
-
-  <h2 id="s-44"><span class="n">4.4</span>WhatsApp, e-mail et Google</h2>
-  <p>Ces réglages se font dans <code>/srv/kader-cargo/api/.env</code>, suivis de <code>systemctl restart kader-cargo-api</code>. Sans WhatsApp ni e-mail configurés, aucun code ni alerte ne part réellement (état « Simulé ») : <strong>configurez-les avant d’ouvrir les inscriptions</strong>.</p>
-  <h3>WhatsApp — option A : Meta (WhatsApp Business Cloud API)</h3>
-  <ol class="steps">
-    <li>Dans <strong>Meta Business Suite → WhatsApp Manager</strong>, ajoutez un numéro dédié (qui n’est pas déjà utilisé dans l’application WhatsApp).</li>
-    <li>Créez les modèles de messages en <strong>français</strong> : <code>kader_registered</code>, <code>kader_loading</code>, <code>kader_in_transit</code>, <code>kader_arrived</code>, <code>kader_ready</code>, <code>kader_delivered</code> (catégorie <em>Utility</em>), <code>kader_account</code> (<em>Utility</em>) et <code>kader_otp</code> (catégorie <em>Authentification</em>). Les textes à soumettre sont dans <code>docs/whatsapp-alertes.md</code>.</li>
-    <li>Créez un utilisateur système avec un jeton permanent, puis renseignez <code>META_WHATSAPP_TOKEN</code> et <code>META_WHATSAPP_PHONE_NUMBER_ID</code>.</li>
-  </ol>
-  <h3>WhatsApp — option B : Twilio</h3>
-  <p>Renseignez <code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code> et <code>TWILIO_WHATSAPP_FROM</code> (numéro WhatsApp activé chez Twilio). Déclarez les mêmes modèles dans <em>Twilio Content</em> et listez leurs identifiants dans <code>TWILIO_CONTENT_SIDS</code>.</p>
-  <h3>E-mail avec Gmail</h3>
-  <ol class="steps">
-    <li>Sur le compte Google de l’adresse d’envoi, activez la <strong>validation en deux étapes</strong>.</li>
-    <li>Créez un <strong>mot de passe d’application</strong> (Compte Google → Sécurité → Mots de passe des applications), nommé « Kader Cargo ».</li>
-    <li>Dans <code>.env</code> : <code>SMTP_USER</code> = l’adresse Gmail, <code>SMTP_PASS</code> = le mot de passe d’application (16 caractères), <code>MAIL_FROM</code> = « Kader Cargo &lt;adresse@gmail.com&gt; ».</li>
-  </ol>
-  <p>Gmail limite le nombre d’envois par jour ; si le volume grandit, passez à un service d’envoi dédié (mêmes réglages SMTP).</p>
-  <h3>Bouton « Continuer avec Google » (facultatif)</h3>
-  <ol class="steps">
-    <li><strong>console.cloud.google.com</strong> → créez un projet, configurez l’écran de consentement OAuth (nom « Kader Cargo », logo, e-mail d’assistance).</li>
-    <li><strong>Identifiants → Créer un ID client OAuth</strong>, type « Application Web », origine JavaScript autorisée : <code>https://kadercargo.com</code>.</li>
-    <li>Copiez l’ID client dans <code>GOOGLE_CLIENT_ID</code> et redémarrez l’API : le bouton apparaît automatiquement.</li>
-  </ol>
-
-  <h2 id="s-45"><span class="n">4.5</span>Mettre à jour l’application</h2>
-  <p>Quand une nouvelle version est publiée sur la branche <code>main</code> :</p>
-  <pre class="cmd"><span class="p">$ </span>/srv/kader-cargo/deploy/update.sh</pre>
-  <p>Le script fait une <strong>sauvegarde</strong>, récupère le code, installe les dépendances, applique les migrations de base de données (sans perte de données), reconstruit le site, redémarre l’API puis vérifie qu’elle répond : « ✓ Kader Cargo est à jour et en ligne ».</p>
-
-  <h2 id="s-46"><span class="n">4.6</span>Sauvegardes et restauration</h2>
-  <p>Chaque nuit, <code>backup.sh</code> crée dans <code>/var/backups/kader-cargo</code> une copie cohérente de la base (<code>kader-DATE.db</code>, faite sans arrêter le service) et une archive des photos (<code>photos-DATE.tar.gz</code>).</p>
-  <div class="callout warn"><b class="t">Copie hors du serveur</b><p>Une sauvegarde qui reste sur le serveur ne protège pas contre la perte du serveur. Copiez régulièrement ce dossier ailleurs (stockage cloud, autre serveur), par exemple avec <code>rclone</code> ou <code>scp</code>, et activez si possible les sauvegardes automatiques de votre hébergeur.</p></div>
-  <h3>Restaurer une sauvegarde</h3>
-  <pre class="cmd"><span class="p">$ </span>systemctl stop kader-cargo-api
-<span class="p">$ </span>cp /var/lib/kader-cargo/kader.db /var/lib/kader-cargo/kader.db.avant-restauration
-<span class="p">$ </span>cp /var/backups/kader-cargo/kader-AAAA-MM-JJ_HHMM.db /var/lib/kader-cargo/kader.db
-<span class="p">$ </span>rm -f /var/lib/kader-cargo/kader.db-wal /var/lib/kader-cargo/kader.db-shm
-<span class="p">$ </span>tar -xzf /var/backups/kader-cargo/photos-AAAA-MM-JJ_HHMM.tar.gz -C /var/lib/kader-cargo
-<span class="p">$ </span>chown -R kader:kader /var/lib/kader-cargo
-<span class="p">$ </span>systemctl start kader-cargo-api</pre>
-  <p>Les données reviennent à l’état du moment de la sauvegarde choisie : ce qui a été saisi après est perdu.</p>
-
-  <h2 id="s-47"><span class="n">4.7</span>Surveillance et dépannage</h2>
-  <pre class="cmd"><span class="p">$ </span>systemctl status kader-cargo-api         <span class="c"># état de l’API</span>
-<span class="p">$ </span>journalctl -u kader-cargo-api -f         <span class="c"># journal en direct (codes, alertes, erreurs)</span>
-<span class="p">$ </span>journalctl -u caddy -n 50                <span class="c"># journal HTTPS</span>
-<span class="p">$ </span>curl https://kadercargo.com/api/v1/health</pre>
-  <p>Pour être alerté si le site tombe, surveillez l’adresse <code>https://kadercargo.com/api/v1/health</code> avec un service gratuit de surveillance (UptimeRobot, Better Stack…).</p>
-  <table>
-    <tr><th style="width:34%">Problème</th><th>Que vérifier</th></tr>
-    <tr><td>Le site ne s’ouvre pas</td><td>DNS (étape 1), pare-feu (<code>ufw status</code>), <code>systemctl status caddy</code>.</td></tr>
-    <tr><td>« 502 Bad Gateway »</td><td>L’API est arrêtée : <code>journalctl -u kader-cargo-api -n 50</code>, puis <code>systemctl restart kader-cargo-api</code>.</td></tr>
-    <tr><td>L’API refuse de démarrer : « JWT_SECRET must be set »</td><td><code>JWT_SECRET</code> manquant ou trop court dans <code>api/.env</code> (étape 6).</td></tr>
-    <tr><td>Les clients ne reçoivent pas les codes WhatsApp</td><td>Alertes « Simulé » : WhatsApp non configuré. « Échec » : identifiants, modèles non approuvés ou numéro invalide — le message d’erreur est dans la fiche du colis et dans le journal.</td></tr>
-    <tr><td>Les e-mails n’arrivent pas</td><td>Mot de passe d’application Gmail, dossier spam du destinataire, journal de l’API.</td></tr>
-    <tr><td>Le bouton Google n’apparaît pas</td><td><code>GOOGLE_CLIENT_ID</code> vide, ou domaine absent des origines autorisées dans Google Cloud.</td></tr>
-    <tr><td>« Trop de tentatives »</td><td>Protection contre les attaques : 5 essais de mot de passe par 15 minutes. Patienter ou se connecter par code.</td></tr>
-    <tr><td>Pas de son dans le back-office</td><td>Cliquer une fois dans la page ; vérifier « Son activé » dans la cloche et le volume de l’ordinateur.</td></tr>
-  </table>
-
-  <h2 id="s-48"><span class="n">4.8</span>Check-list de mise en production</h2>
-  <ul>
-    <li><code>JWT_SECRET</code> long et unique, <code>api/.env</code> en droits 640 ; ne jamais le publier ni l’envoyer par message.</li>
-    <li>Connexion SSH par clé uniquement (désactiver le mot de passe root) et mises à jour de sécurité automatiques (<code>unattended-upgrades</code>).</li>
-    <li>Pare-feu actif : seuls SSH, 80 et 443 sont ouverts.</li>
-    <li>WhatsApp et e-mail configurés et testés <strong>avant</strong> d’annoncer l’inscription aux clients.</li>
-    <li><code>PUBLIC_WEB_URL</code> renseigné (liens de suivi dans les messages).</li>
-    <li>Sauvegarde nocturne active et copiée hors du serveur ; une restauration testée.</li>
-    <li>Un compte nominatif par employé, avec le bon rôle ; comptes désactivés au départ d’un employé.</li>
-    <li>Contenus vérifiés sur le site : tarifs, délais, offre maritime, adresse de l’agence de Lomé (voir annexe).</li>
-  </ul>
-</section>
-
-<!-- ========================================================= ANNEXE -->
+<!-- ========================================================= ANNEXES -->
 <section class="part" data-toc-part="Annexes">
   <div class="part-head">
     <div class="num">Annexes</div>
-    <h1>Référence</h1>
-    <p>Variables de configuration, informations à compléter et contacts.</p>
+    <h1>Pour aller plus loin</h1>
+    <p>Lexique, questions fréquentes, informations à confirmer et contacts.</p>
     <svg viewBox="0 0 64 64"><path fill="#fff" transform="rotate(45 34 30)" d="M34 8c2 0 3.2 2.6 3.2 5.4V24l15.3 8.6c.6.3.9.9.9 1.6v2.2l-16.2-4.6v10.6l4.6 3.6c.3.2.4.6.4.9v2l-7.2-2.2-7.2 2.2v-2c0-.3.2-.7.4-.9l4.6-3.6V31.8l-16.2 4.6v-2.2c0-.7.3-1.3.9-1.6L30.8 24V13.4C30.8 10.6 32 8 34 8z"/></svg>
   </div>
 
-  <h2 id="s-a"><span class="n">A</span>Variables du fichier api/.env</h2>
+  <h2 id="s-a"><span class="n">A</span>Lexique</h2>
   <table>
-    <tr><th style="width:34%">Variable</th><th>Rôle</th></tr>
-    <tr><td><code>NODE_ENV</code></td><td><code>production</code> : cookies sécurisés, aucun code de démonstration affiché.</td></tr>
-    <tr><td><code>JWT_SECRET</code></td><td>Secret de signature des sessions (obligatoire, généré une fois).</td></tr>
-    <tr><td><code>DATABASE_URL</code> · <code>UPLOAD_DIR</code></td><td>Emplacement de la base et des photos (<code>/var/lib/kader-cargo</code>).</td></tr>
-    <tr><td><code>PUBLIC_WEB_URL</code></td><td>Adresse du site, utilisée dans les liens WhatsApp et e-mails.</td></tr>
-    <tr><td><code>TRUST_PROXY</code></td><td><code>1</code> derrière Caddy (limitation correcte par adresse IP).</td></tr>
-    <tr><td><code>LOGIN_RATE_LIMIT</code></td><td>Essais de mot de passe autorisés par IP et par 15 minutes (5).</td></tr>
-    <tr><td><code>TWILIO_*</code> · <code>META_*</code> · <code>WHATSAPP_PROVIDER</code></td><td>Envoi WhatsApp (codes et alertes). Voir 4.4.</td></tr>
-    <tr><td><code>SMTP_*</code> · <code>MAIL_FROM</code></td><td>Envoi d’e-mails (codes de vérification, avis de compte).</td></tr>
-    <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>Active le bouton « Continuer avec Google ».</td></tr>
+    <thead><tr><th style="width:28%">Terme</th><th>Signification</th></tr></thead>
+    <tr><td><strong>Numéro de suivi</strong></td><td>Identifiant unique d’un colis, au format <code>KC-2026-7KX9QA</code>. Envoyé au client par WhatsApp dès la réception.</td></tr>
+    <tr><td><strong>Lot / conteneur</strong></td><td>Groupe de colis qui voyagent ensemble : un vol (lot aérien <code>AIR-…</code>) ou un conteneur maritime (<code>CT-…</code>).</td></tr>
+    <tr><td><strong>Clôturer un lot</strong></td><td>Fermer le lot quand il est complet : ses colis passent à « Chargement » et on ne peut plus en ajouter.</td></tr>
+    <tr><td><strong>Mise à jour en masse</strong></td><td>Faire avancer d’un coup tous les colis d’un lot clôturé (départ, arrivée, disponibilité).</td></tr>
+    <tr><td><strong>Disponible au retrait</strong></td><td>Étape qui confirme que le dédouanement est terminé : le client peut venir chercher son colis.</td></tr>
+    <tr><td><strong>Code de vérification</strong></td><td>Code à 6 chiffres envoyé par WhatsApp ou e-mail pour créer un compte ou se connecter. Valable 10 minutes, à ne jamais communiquer.</td></tr>
+    <tr><td><strong>Compte en attente</strong></td><td>Compte créé par un client mais pas encore validé par un administrateur : il ne permet pas encore de se connecter.</td></tr>
+    <tr><td><strong>Alerte « Simulé »</strong></td><td>Message préparé mais non envoyé, car aucun compte WhatsApp n’est configuré.</td></tr>
   </table>
 
-  <h2 id="s-b"><span class="n">B</span>Informations à confirmer par Kader Cargo</h2>
+  <h2 id="s-b"><span class="n">B</span>Questions fréquentes</h2>
+  <h3>Pour les clients</h3>
   <table>
-    <tr><th style="width:34%">Élément</th><th>Valeur actuelle</th></tr>
+    <thead><tr><th style="width:38%">Question</th><th>Réponse</th></tr></thead>
+    <tr><td>Je ne reçois pas le code.</td><td>Vérifiez le numéro (format +228…) et que WhatsApp est installé sur ce numéro. Pour un e-mail, regardez dans les indésirables. Un nouveau code peut être demandé après 60 secondes.</td></tr>
+    <tr><td>« Code invalide ou expiré ».</td><td>Le code est valable 10 minutes et seul le dernier code reçu fonctionne. Après 5 erreurs, demandez un nouveau code.</td></tr>
+    <tr><td>Je ne vois pas mon colis dans mon espace.</td><td>Le colis a sans doute été enregistré à un autre numéro. Ajoutez ce numéro dans <strong>Mon compte</strong> (vérifié par code) ou contactez l’agence.</td></tr>
+    <tr><td>Mon compte est « en attente ».</td><td>Kader Cargo valide chaque nouveau compte, en général dans la journée. Vous êtes prévenu par WhatsApp ou e-mail.</td></tr>
+    <tr><td>J’ai oublié mon mot de passe.</td><td>Connectez-vous avec un <strong>code WhatsApp ou e-mail</strong> : le mot de passe n’est pas nécessaire.</td></tr>
+    <tr><td>J’ai changé de numéro.</td><td>Connectez-vous (par e-mail ou mot de passe), puis <strong>Mon compte → Téléphone → Changer</strong>. Sinon, contactez l’agence de Lomé.</td></tr>
+  </table>
+  <h3>Pour l’équipe</h3>
+  <table>
+    <thead><tr><th style="width:38%">Question</th><th>Réponse</th></tr></thead>
+    <tr><td>J’ai validé une mauvaise étape.</td><td>Demandez à un administrateur de corriger le statut : la correction n’envoie aucun message au client.</td></tr>
+    <tr><td>Une alerte WhatsApp est en « Échec ».</td><td>Vérifiez le numéro du client dans la fiche du colis, puis cliquez sur <strong>Renvoyer</strong>. L’administrateur est prévenu après 3 tentatives sans succès.</td></tr>
+    <tr><td>Je n’entends pas les notifications.</td><td>Cliquez une fois dans la page du back-office, vérifiez « Son activé » dans la cloche et le volume de l’ordinateur.</td></tr>
+    <tr><td>Un colis est refusé lors de l’ajout à un lot.</td><td>La raison est affichée : colis déjà expédié, mode différent (aérien / maritime) ou déjà dans un autre lot clôturé.</td></tr>
+    <tr><td>Un employé a oublié son mot de passe.</td><td>Il peut se connecter avec un code envoyé à son e-mail ou à son numéro, onglet « Code WhatsApp / e-mail ».</td></tr>
+    <tr><td>« Trop de tentatives ».</td><td>Protection contre les attaques : 5 essais de mot de passe par 15 minutes. Patientez ou connectez-vous par code.</td></tr>
+  </table>
+
+  <h2 id="s-c"><span class="n">C</span>Informations à confirmer par Kader Cargo</h2>
+  <table>
+    <thead><tr><th style="width:34%">Élément</th><th>Valeur actuellement affichée</th></tr></thead>
     <tr><td>Tarif aérien</td><td>9 500 FCFA / kg (minimum 10 000 FCFA) — <em>à confirmer</em></td></tr>
-    <tr><td>Tarif maritime</td><td>250 000 FCFA / m³ — <em>à confirmer, l’offre maritime est-elle proposée ?</em></td></tr>
+    <tr><td>Tarif maritime</td><td>250 000 FCFA / m³ — <em>l’offre maritime est-elle proposée ?</em></td></tr>
     <tr><td>Délais affichés</td><td>Aérien 7 à 10 jours, maritime 45 à 60 jours — <em>à confirmer</em></td></tr>
     <tr><td>Adresse de l’agence de Lomé</td><td>À fournir (le site affiche « Lomé, Togo »)</td></tr>
   </table>
-  <p>Ces valeurs se modifient dans le code (<code>api/src/lib/domain.ts</code> pour les tarifs facturés, <code>web/src/lib/site.ts</code> pour les coordonnées affichées), puis on publie une mise à jour (4.5).</p>
+  <p>Transmettez les bonnes valeurs à votre technicien : il les met à jour sur le site.</p>
 
-  <h2 id="s-c"><span class="n">C</span>Contacts Kader Cargo</h2>
+  <h2 id="s-d"><span class="n">D</span>Contacts Kader Cargo</h2>
   <div class="grid2">
     <div>
       <h3 style="margin-top:0">Lomé — Togo</h3>
@@ -486,7 +318,7 @@
     </div>
     <div>
       <h3 style="margin-top:0">Guangzhou — Chine</h3>
-      <p>Kader · +86 137 2544 5017 · +86 152 0205 9957 · +86 135 0307 1047<br/>Mounkaila · +86 134 3398 8698 · +86 137 9816 4151<br/>201 Huanshi Zhong Lu, local 103 (à côté de l’hôtel Hengfulai), district de Yuexiu</p>
+      <p>Kader · +86 137 2544 5017 · +86 152 0205 9957 · +86 135 0307 1047<br/>Mounkaila · +86 134 3398 8698 · +86 137 9816 4151<br/>201 Huanshi Zhong Lu, local 103 (à côté de l’hôtel Hengfulai), district de Yuexiu<br/><span lang="zh-CN">广州市越秀区环市中路201号亨富涞酒店旁边103档</span></p>
     </div>
   </div>
 </section>

@@ -84,3 +84,5 @@ pre.cmd .p { color: #ff9fbd; user-select: none; }
 .arch .box.main { border-color: var(--brand); background: var(--tint); }
 .arch .arrow { color: var(--brand); font-weight: 700; }
 .arch .sub { display: grid; gap: 4pt; }
+thead { display: table-header-group; break-after: avoid; }
+thead tr { break-inside: avoid; break-after: avoid; }
