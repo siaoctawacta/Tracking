@@ -181,6 +181,8 @@ Résumé : un serveur Ubuntu 24.04, Caddy (HTTPS automatique) devant l’API Nod
 | `deploy/update.sh` | mise à jour : sauvegarde, `git pull`, dépendances, migrations, build, redémarrage, vérification |
 | `deploy/backup.sh` · `deploy/cron.kader-cargo` | sauvegarde nocturne (base + photos, 14 jours) |
 
+**Site sur Vercel** : `vercel.json` et `.vercelignore` sont prêts. Vercel héberge uniquement le site (`web/`) et transmet `/api/*` à l’API installée sur un serveur (remplacez `https://api.kadercargo.com` dans `vercel.json` par son adresse, et mettez `TRUST_PROXY=2` sur l’API). Vercel ne peut pas héberger l’API elle-même (base SQLite et photos sur disque). Détails : Guide technique, section 6.4.
+
 Premier administrateur sur un serveur vierge (sans données de démo) : `npm --prefix api run create-admin -- --name "Kader" --email admin@kadercargo.com`. **Ne jamais lancer `npm run setup` ni `db:seed` en production** : ces commandes effacent les données.
 
 Pour régénérer les PDF après une modification de `docs/guide/` : `node docs/guide/build-pdf.mjs [utilisateur|technique]` (nécessite Playwright, poppler-utils et pypdf).
