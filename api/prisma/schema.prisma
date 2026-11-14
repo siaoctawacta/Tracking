@@ -1,4 +1,4 @@
-// Benit Cargo — data model (SQLite for the MVP, swap provider for PostgreSQL in prod)
+// Kader Cargo — data model (SQLite for the MVP, swap provider for PostgreSQL in prod)
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
