@@ -184,7 +184,8 @@ Deux guides PDF à remettre au client :
 
 1. **Supabase** : créer le projet ; bouton *Connect* → chaîne *Transaction pooler* (`DATABASE_URL`) et *Session pooler* (`DIRECT_URL`) ; *Storage* → bucket privé `photos` ; *Settings → API* → URL du projet et clé `service_role`.
 2. **Vercel** : importer le dépôt (aucun réglage de build à saisir) ; variables d’environnement *Production* : `DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `PUBLIC_WEB_URL`, `TRUST_PROXY=1`, puis WhatsApp / SMTP / Google. **Ne pas définir `NODE_ENV`.**
-3. **Premier administrateur** (sans données de démo), depuis un poste : `DATABASE_URL="<Session pooler>" npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com`.
+3. **Tables** : rien à créer, les migrations les créent au premier déploiement de production (11 tables visibles dans *Table Editor*, Row Level Security active). Secours sur une base vide : [`docs/supabase/schema.sql`](docs/supabase/schema.sql) dans le *SQL Editor* (détails : [`docs/supabase/`](docs/supabase/README.md)).
+4. **Premier administrateur** (sans données de démo), depuis un poste : `DATABASE_URL="<Session pooler>" npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com`.
 
 **Ne jamais lancer `npm run setup` ni `db:seed` sur la base de production** : ces commandes effacent les données.
 

@@ -44,7 +44,7 @@ figcaption { font-size: 8.4pt; color: var(--muted); margin-top: 5pt; }
 
 /* ---------- Steps ---------- */
 ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 6pt 0 10pt; }
-ol.steps > li { counter-increment: s; position: relative; padding-left: 26pt; margin-bottom: 7pt; break-inside: avoid; }
+ol.steps > li { counter-increment: s; position: relative; padding-left: 26pt; margin-bottom: 7pt; break-inside: avoid; contain: paint; min-height: 17pt; }
 ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 17pt; height: 17pt; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; font-size: 8.5pt; display: grid; place-items: center; }
 ul { margin: 4pt 0 9pt; padding-left: 14pt; }
 ul li { margin-bottom: 3pt; }
