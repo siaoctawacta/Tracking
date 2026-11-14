@@ -29,7 +29,7 @@ export function Lightbox({ url, onClose }: { url: string | null; onClose: () => 
   }, [onClose])
   if (!url) return null
   return (
-    <div className="fixed inset-0 z-50 grid animate-fade-up place-items-center bg-navy/80 p-6 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 grid animate-fade-up place-items-center bg-deep/80 p-6 backdrop-blur-sm" onClick={onClose} role="dialog" aria-modal="true">
       <img src={url} alt="Photo de contrôle" className="max-h-[85vh] max-w-full rounded-2xl shadow-2xl" />
     </div>
   )

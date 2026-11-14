@@ -29,9 +29,9 @@ export default function Containers() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {data.containers.map((c) => (
-            <Link key={c.id} to={`/admin/conteneurs/${c.id}`} className="group rounded-2xl border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/5">
+            <Link key={c.id} to={`/admin/conteneurs/${c.id}`} className="group rounded-2xl border border-line bg-surface p-5 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5">
               <div className="flex items-start justify-between">
-                <span className={cx('grid size-10 place-items-center rounded-xl', c.mode === 'AIR' ? 'bg-navy text-white' : 'bg-electric-50 text-electric')}>{c.mode === 'AIR' ? <Plane className="size-5" /> : <Ship className="size-5" />}</span>
+                <span className={cx('grid size-10 place-items-center rounded-xl', c.mode === 'AIR' ? 'bg-deep text-white' : 'bg-electric-50 text-electric')}>{c.mode === 'AIR' ? <Plane className="size-5" /> : <Ship className="size-5" />}</span>
                 <span className={cx('rounded-full px-2.5 py-1 text-xs font-semibold', c.state === 'OPEN' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600')}>{c.state === 'OPEN' ? 'Ouvert' : 'Clôturé'}</span>
               </div>
               <p className="mt-5 font-bold tracking-wide text-navy">{c.code}</p>
@@ -70,7 +70,7 @@ function CreateForm({ onCancel }: { onCancel: () => void }) {
       <form onSubmit={submit} className="flex flex-col gap-4 md:flex-row md:items-end">
         <div className="grid grid-cols-2 gap-1 rounded-xl bg-canvas p-1 md:w-64">
           {(['SEA', 'AIR'] as const).map((m) => (
-            <button key={m} type="button" onClick={() => setMode(m)} className={cx('h-9 cursor-pointer rounded-lg text-sm font-semibold', mode === m ? 'bg-white text-navy shadow-sm' : 'text-muted')}>{m === 'AIR' ? 'Aérien' : 'Maritime'}</button>
+            <button key={m} type="button" onClick={() => setMode(m)} className={cx('h-9 cursor-pointer rounded-lg text-sm font-semibold', mode === m ? 'bg-surface text-navy shadow-sm' : 'text-muted')}>{m === 'AIR' ? 'Aérien' : 'Maritime'}</button>
           ))}
         </div>
         <div className="md:w-56"><Input label="Arrivée estimée" type="date" name="etaAt" value={etaAt} onChange={(e) => setEta(e.target.value)} /></div>

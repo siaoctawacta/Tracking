@@ -1,11 +1,17 @@
 @import 'tailwindcss';
 
+/* Theme is driven by a `dark` class on <html> (set by /theme-init.js before first paint). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
   --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
   --color-ink: #1e293b;
+  /* navy = strongest text colour (flips in dark mode); deep = brand navy surfaces (stays dark). */
   --color-navy: #121e31;
-  --color-navy-800: #1b2a42;
+  --color-deep: #121e31;
+  --color-deep-800: #1b2a42;
   --color-electric: #1e90ff;
   --color-electric-600: #0b7be6;
   --color-electric-50: #eef6ff;
@@ -26,8 +32,53 @@
   }
 }
 
+/*
+ * Dark palette: the semantic tokens and the neutral/pastel scales are re-pointed, so every
+ * component (bg-surface, text-navy, border-line, bg-slate-100, bg-emerald-50…) adapts without
+ * per-component dark: variants.
+ */
+.dark {
+  color-scheme: dark;
+  --color-canvas: #0b1220;
+  --color-surface: #111a2b;
+  --color-ink: #dbe3ee;
+  --color-navy: #f1f5f9;
+  --color-deep: #1c2c48;
+  --color-deep-800: #26395a;
+  --color-line: #1f2b3f;
+  --color-muted: #8d9bb0;
+  --color-electric-50: #0f2440;
+
+  --color-slate-50: #0f1829;
+  --color-slate-100: #172235;
+  --color-slate-200: #223047;
+  --color-slate-300: #34435d;
+  --color-slate-400: #6b7a93;
+  --color-slate-500: #8b98ad;
+  --color-slate-600: #a5b1c2;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+
+  --color-amber-50: #2a2112;
+  --color-amber-700: #fbbf24;
+  --color-emerald-50: #0f2a22;
+  --color-emerald-100: #134030;
+  --color-emerald-200: #1a5440;
+  --color-emerald-700: #34d399;
+  --color-indigo-50: #1b1f3d;
+  --color-indigo-700: #a5b4fc;
+  --color-rose-50: #2d1520;
+  --color-rose-100: #4a1d2c;
+  --color-rose-300: #9f3a55;
+  --color-rose-700: #fda4af;
+}
+
 @layer base {
   html { -webkit-tap-highlight-color: transparent; }
+  html.theme-transition, html.theme-transition * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease !important;
+  }
   body {
     @apply bg-canvas text-ink font-sans antialiased;
     font-feature-settings: 'ss01', 'cv11';

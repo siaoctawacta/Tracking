@@ -9,7 +9,7 @@ const TONE: Record<Status, string> = {
   IN_TRANSIT: 'bg-electric-50 text-electric-600',
   ARRIVED: 'bg-indigo-50 text-indigo-700',
   READY: 'bg-emerald-50 text-emerald-700',
-  DELIVERED: 'bg-slate-900 text-white',
+  DELIVERED: 'bg-deep text-white dark:bg-slate-700 dark:text-canvas',
 }
 
 export function StatusBadge({ status, label, className }: { status: Status; label?: string; className?: string }) {
@@ -67,8 +67,8 @@ export function StatusStepper({ status, mode, events = [] }: { status: Status; m
                   className={cx(
                     'relative grid size-10 place-items-center rounded-full border-2 transition-colors duration-500',
                     done && 'border-electric bg-electric text-white',
-                    active && 'border-electric bg-white text-electric shadow-[0_0_0_6px_rgba(30,144,255,0.12)]',
-                    !done && !active && 'border-line bg-white text-slate-300',
+                    active && 'border-electric bg-surface text-electric shadow-[0_0_0_6px_rgba(30,144,255,0.12)]',
+                    !done && !active && 'border-line bg-surface text-slate-300',
                   )}
                 >
                   {done ? <Check className="size-4" strokeWidth={3} /> : stepIcon(s, mode)}
@@ -95,8 +95,8 @@ export function StatusStepper({ status, mode, events = [] }: { status: Status; m
                 className={cx(
                   'relative z-10 grid size-9 shrink-0 place-items-center rounded-full border-2',
                   done && 'border-electric bg-electric text-white',
-                  active && 'border-electric bg-white text-electric shadow-[0_0_0_5px_rgba(30,144,255,0.12)]',
-                  !done && !active && 'border-line bg-white text-slate-300',
+                  active && 'border-electric bg-surface text-electric shadow-[0_0_0_5px_rgba(30,144,255,0.12)]',
+                  !done && !active && 'border-line bg-surface text-slate-300',
                 )}
               >
                 {done ? <Check className="size-4" strokeWidth={3} /> : stepIcon(s, mode)}
@@ -121,7 +121,7 @@ export function EventHistory({ events, showAuthor = false }: { events: TimelineE
       {list.map((e, i) => (
         <li key={e.id ?? i} className="relative flex gap-4 pb-6 last:pb-0">
           {i < list.length - 1 && <span className="absolute left-[5px] top-4 bottom-0 w-px bg-line" />}
-          <span className={cx('relative mt-1.5 size-[11px] shrink-0 rounded-full border-2', i === 0 ? 'border-electric bg-electric' : 'border-slate-300 bg-white')} />
+          <span className={cx('relative mt-1.5 size-[11px] shrink-0 rounded-full border-2', i === 0 ? 'border-electric bg-electric' : 'border-slate-300 bg-surface')} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <p className={cx('text-sm font-semibold', i === 0 ? 'text-navy' : 'text-ink')}>{e.label}</p>

@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { isStaff, useAuth } from '../lib/auth'
 import { site, waLink } from '../lib/site'
 import { Logo, WhatsAppIcon } from './icons'
+import { ThemeToggle } from './ThemeToggle'
 import { cx } from './ui'
 
 const NAV = [
@@ -40,14 +41,18 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden items-center gap-2 md:flex">
-          <Link to={space} className="inline-flex h-9 items-center gap-2 rounded-xl bg-navy px-4 text-sm font-semibold text-white transition hover:bg-navy-800">
+          <ThemeToggle />
+          <Link to={space} className="inline-flex h-9 items-center gap-2 rounded-xl bg-deep px-4 text-sm font-semibold text-white transition hover:bg-deep-800">
             {user ? <LayoutDashboard className="size-4" /> : <LogIn className="size-4" />}
             {user ? 'Mon espace' : 'Connexion'}
           </Link>
         </div>
-        <button className="grid size-10 place-items-center rounded-xl text-navy md:hidden" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle className="size-10 w-10" />
+          <button className="grid size-10 cursor-pointer place-items-center rounded-xl text-navy" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
       {open && (
         <div className="animate-fade-up border-t border-line px-5 pb-6 pt-3 md:hidden">
@@ -55,7 +60,7 @@ export function SiteHeader() {
             <Link to="/suivi" className="py-3 text-base font-medium text-navy">Suivi de colis</Link>
             {NAV.map((n) => <a key={n.to} href={n.to} className="py-3 text-base font-medium text-navy">{n.label}</a>)}
           </nav>
-          <Link to={space} className="mt-4 flex h-12 items-center justify-center rounded-xl bg-navy font-semibold text-white">{user ? 'Mon espace' : 'Connexion'}</Link>
+          <Link to={space} className="mt-4 flex h-12 items-center justify-center rounded-xl bg-deep font-semibold text-white">{user ? 'Mon espace' : 'Connexion'}</Link>
         </div>
       )}
     </header>
@@ -64,7 +69,7 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-white">
+    <footer className="border-t border-line bg-surface">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Logo />

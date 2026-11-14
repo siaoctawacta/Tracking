@@ -10,9 +10,9 @@ export function Logo({ light = false }: { light?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
       <svg viewBox="0 0 32 32" className="size-8" aria-hidden="true">
-        <rect width="32" height="32" rx="9" fill={light ? '#fff' : '#121E31'} />
+        <rect width="32" height="32" rx="9" className={light ? 'fill-white' : 'fill-deep'} />
         <path d="M9 21.5 16 9l7 12.5H9Z" fill="none" stroke="#1E90FF" strokeWidth="2.6" strokeLinejoin="round" />
-        <circle cx="16" cy="18" r="2" fill={light ? '#121E31' : '#fff'} />
+        <circle cx="16" cy="18" r="2" className={light ? 'fill-deep' : 'fill-white'} />
       </svg>
       <span className={`text-[17px] font-bold tracking-tight ${light ? 'text-white' : 'text-navy'}`}>
         Benit<span className="text-electric">Cargo</span>

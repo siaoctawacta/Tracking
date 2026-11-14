@@ -6,9 +6,9 @@ export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Bool
 type Variant = 'primary' | 'dark' | 'ghost' | 'outline' | 'danger'
 const variants: Record<Variant, string> = {
   primary: 'bg-electric text-white hover:bg-electric-600 shadow-sm shadow-electric/25',
-  dark: 'bg-navy text-white hover:bg-navy-800',
+  dark: 'bg-deep text-white hover:bg-deep-800',
   ghost: 'text-ink hover:bg-slate-100',
-  outline: 'border border-line bg-white text-ink hover:border-slate-300 hover:bg-slate-50',
+  outline: 'border border-line bg-surface text-ink hover:border-slate-300 hover:bg-slate-50',
   danger: 'bg-rose-600 text-white hover:bg-rose-700',
 }
 
@@ -42,7 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
           ref={ref}
           id={inputId}
           className={cx(
-            'h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-ink placeholder:text-slate-400 transition focus:outline-none focus:ring-4',
+            'h-11 w-full rounded-xl border bg-surface px-3.5 text-sm text-ink placeholder:text-slate-400 transition focus:outline-none focus:ring-4',
             error ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100' : 'border-line focus:border-electric focus:ring-electric/15',
             className,
           )}
@@ -59,7 +59,7 @@ export function Select({ label, className, children, ...rest }: SelectHTMLAttrib
     <label className="block">
       {label && <span className="mb-1.5 block text-sm font-medium text-ink">{label}</span>}
       <select
-        className={cx('h-11 w-full cursor-pointer rounded-xl border border-line bg-white px-3 text-sm text-ink focus:border-electric focus:outline-none focus:ring-4 focus:ring-electric/15', className)}
+        className={cx('h-11 w-full cursor-pointer rounded-xl border border-line bg-surface px-3 text-sm text-ink focus:border-electric focus:outline-none focus:ring-4 focus:ring-electric/15', className)}
         {...rest}
       >
         {children}
@@ -69,7 +69,7 @@ export function Select({ label, className, children, ...rest }: SelectHTMLAttrib
 }
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cx('rounded-2xl border border-line bg-white', className)}>{children}</div>
+  return <div className={cx('rounded-2xl border border-line bg-surface', className)}>{children}</div>
 }
 
 export function Spinner({ className }: { className?: string }) {
