@@ -166,7 +166,10 @@ Le navigateur interroge l’API toutes les 10 s (`GET /api/v1/staff/notification
 
 ## Mise en production
 
-Le guide complet (utilisation + déploiement, en PDF à remettre au client) : **[docs/Kader-Cargo-Guide.pdf](docs/Kader-Cargo-Guide.pdf)**.
+Deux guides PDF à remettre au client :
+
+- **[Guide d’utilisation](docs/Kader-Cargo-Guide-Utilisateur.pdf)** : présentation, guide du client, guide de l’équipe, annexes (lexique, questions fréquentes, contacts).
+- **[Guide technique](docs/Kader-Cargo-Guide-Technique.pdf)** : architecture et code, référence de l’API, sécurité, intégrations, déploiement sur un serveur, exploitation.
 
 Résumé : un serveur Ubuntu 24.04, Caddy (HTTPS automatique) devant l’API Node.js lancée par systemd, base SQLite et photos dans `/var/lib/kader-cargo`, sauvegarde chaque nuit. Les fichiers prêts à copier sont dans [`deploy/`](deploy/) :
 
@@ -180,7 +183,7 @@ Résumé : un serveur Ubuntu 24.04, Caddy (HTTPS automatique) devant l’API Nod
 
 Premier administrateur sur un serveur vierge (sans données de démo) : `npm --prefix api run create-admin -- --name "Kader" --email admin@kadercargo.com`. **Ne jamais lancer `npm run setup` ni `db:seed` en production** : ces commandes effacent les données.
 
-Pour régénérer le PDF après une modification de `docs/guide/` : `node docs/guide/build-pdf.mjs` (nécessite Playwright, poppler-utils et pypdf).
+Pour régénérer les PDF après une modification de `docs/guide/` : `node docs/guide/build-pdf.mjs [utilisateur|technique]` (nécessite Playwright, poppler-utils et pypdf).
 
 ## À compléter avant lancement
 

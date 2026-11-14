@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Kader Cargo — Guide technique</title>
+<link rel="stylesheet" href="guide.css" />
+<link rel="stylesheet" href="technique.css" />
+</head>
+<body class="tech">
+
+<!-- ========================================================= SOMMAIRE -->
+<section>
+  <h2 style="margin-top:0;font-size:20pt;border:0">Sommaire</h2>
+  <p class="lead">Documentation de référence pour le technicien ou le développeur : architecture et code, API, sécurité, intégrations, déploiement sur un serveur et exploitation. L’utilisation quotidienne de la plateforme est décrite dans le <strong>Guide d’utilisation</strong>.</p>
+  <div class="toc" id="toc"></div>
+</section>
+
+<!-- ========================================================= 1. ARCHITECTURE -->
+<section class="part" data-toc-part="1. Architecture et code">
+  <div class="part-head">
+    <div class="num">01 / architecture</div>
+    <h1>Architecture et code</h1>
+    <p>Pile technologique, organisation du dépôt, modèle de données et cycle de vie d’un colis.</p>
+    <span class="tag">siaoctawacta/Tracking · branche main</span>
+  </div>
+
+  <h2 id="t-11"><span class="n">1.1</span>Vue d’ensemble</h2>
+  <p>L’application est <strong>découplée</strong> : une application monopage (SPA) React servie comme fichiers statiques, et une <strong>API REST JSON sans état</strong> en Node.js. Elles ne communiquent que par HTTPS, sous <code>/api/v1</code>. L’API ne génère aucun HTML ; la SPA ne contient aucune logique métier (prix, numéros de suivi, transitions de statut et droits sont décidés par l’API).</p>
+  <div class="arch">
+    <div class="box"><b>Navigateur</b>SPA React<br/>(fichiers statiques)</div>
+    <div class="arrow">HTTPS →</div>
+    <div class="box main"><b>Caddy</b>TLS Let’s Encrypt, en-têtes<br/><span style="color:var(--muted)">/ → web/dist · /api → :4000</span></div>
+    <div class="arrow">→</div>
+    <div class="sub">
+      <div class="box"><b>API Express 5</b>systemd, 127.0.0.1:4000</div>
+      <div class="box"><b>SQLite + photos</b>/var/lib/kader-cargo</div>
+    </div>
+  </div>
+  <p>Services externes appelés par l’API : WhatsApp (Twilio ou Meta Cloud API), SMTP (e-mails), clés publiques Google (connexion Google).</p>
+
+  <h2 id="t-12"><span class="n">1.2</span>Pile technologique</h2>
+  <div class="grid2">
+    <table>
+      <thead><tr><th colspan="2">API — <code style="background:none;color:#fff">api/</code></th></tr></thead>
+      <tr><td>Exécution</td><td>Node.js 22, TypeScript 7 (exécuté par tsx)</td></tr>
+      <tr><td>Serveur HTTP</td><td>Express 5, helmet 8, cookie-parser, cors</td></tr>
+      <tr><td>Données</td><td>Prisma 7 + adaptateur better-sqlite3 (SQLite)</td></tr>
+      <tr><td>Validation</td><td>zod 4 (schémas <code>.strict()</code>)</td></tr>
+      <tr><td>Sécurité</td><td>@node-rs/argon2, jsonwebtoken, jose, express-rate-limit 8</td></tr>
+      <tr><td>Fichiers / PDF</td><td>multer 2, pdfkit, bwip-js (code-barres, QR)</td></tr>
+      <tr><td>E-mail</td><td>nodemailer (SMTP)</td></tr>
+      <tr><td>Tests</td><td>vitest 5, supertest — 42 tests</td></tr>
+    </table>
+    <table>
+      <thead><tr><th colspan="2">Site — <code style="background:none;color:#fff">web/</code></th></tr></thead>
+      <tr><td>Interface</td><td>React 19, React Router 7</td></tr>
+      <tr><td>Build</td><td>Vite 8, TypeScript 7</td></tr>
+      <tr><td>Styles</td><td>Tailwind CSS 4 (thème clair / sombre par variables CSS)</td></tr>
+      <tr><td>Icônes</td><td>lucide-react</td></tr>
+      <tr><td>Polices</td><td>Plus Jakarta Sans, Playfair Display (auto-hébergées)</td></tr>
+      <tr><td>Lint</td><td>oxlint</td></tr>
+      <tr><td>Découpage</td><td>pages connectées chargées à la demande</td></tr>
+    </table>
+  </div>
+
+  <h2 id="t-13"><span class="n">1.3</span>Organisation du dépôt</h2>
+  <div class="tree">Tracking/
+├─ api/
+│  ├─ prisma/schema.prisma      <span class="c"># modèle de données</span>
+│  ├─ prisma/migrations/        <span class="c"># migrations SQL versionnées</span>
+│  ├─ prisma/seed.ts            <span class="c"># données de démonstration (jamais en production)</span>
+│  ├─ scripts/                  <span class="c"># create-admin.ts, backup.mjs, init-env.mjs</span>
+│  ├─ src/app.ts                <span class="c"># Express : helmet, CORS, CSRF, routes /api/v1</span>
+│  ├─ src/config.ts             <span class="c"># lecture de l’environnement (.env)</span>
+│  ├─ src/routes/               <span class="c"># auth, account, tracking, shipments, containers, users, staffNotifications</span>
+│  ├─ src/lib/                  <span class="c"># security, otp, google, whatsapp, mailer, pdf, uploads, domain, workflow…</span>
+│  ├─ src/middleware/           <span class="c"># auth (JWT + rôles), csrf, errors</span>
+│  └─ test/                     <span class="c"># api, signup, whatsapp (.test.ts)</span>
+├─ web/
+│  ├─ src/pages/                <span class="c"># Home, Track, Login, Register, client/*, admin/*</span>
+│  ├─ src/components/           <span class="c"># UI, frise de statut, cloche de notifications…</span>
+│  ├─ src/lib/                  <span class="c"># api.ts (client HTTP), auth, theme, site.ts (coordonnées)</span>
+│  └─ public/                   <span class="c"># favicon, theme-init.js, _headers</span>
+├─ deploy/                      <span class="c"># Caddyfile, service systemd, update.sh, backup.sh, cron</span>
+├─ brand/                       <span class="c"># logo SVG/PNG + build-logo.mjs</span>
+└─ docs/                        <span class="c"># guides PDF, alertes WhatsApp, captures</span></div>
+
+  <h2 id="t-14"><span class="n">1.4</span>Modèle de données</h2>
+  <table>
+    <thead><tr><th style="width:20%">Table</th><th>Rôle et champs principaux</th></tr></thead>
+    <tr><td><code>User</code></td><td>Comptes (clients et personnel) : <code>name</code>, <code>email</code>/<code>phone</code>/<code>googleSub</code> (uniques, enregistrés seulement une fois prouvés), <code>passwordHash</code> (facultatif), <code>role</code>, <code>active</code>, <code>approvalStatus</code> (PENDING / APPROVED / REJECTED), <code>signupMethod</code>, <code>notificationsSeenAt</code>.</td></tr>
+    <tr><td><code>RefreshToken</code></td><td>Jetons de rafraîchissement : <code>tokenHash</code> (SHA-256), <code>familyId</code>, <code>expiresAt</code>, <code>revokedAt</code>, <code>replacedBy</code>.</td></tr>
+    <tr><td><code>OtpCode</code></td><td>Codes de vérification : <code>channel</code>, <code>destination</code>, <code>purpose</code> (REGISTER / LOGIN / LINK), <code>codeHash</code> (HMAC), <code>payload</code>, <code>attempts</code>, <code>expiresAt</code>, <code>consumedAt</code>.</td></tr>
+    <tr><td><code>Shipment</code></td><td>Colis : <code>trackingId</code> (unique), <code>mode</code> (SEA / AIR), <code>status</code>, <code>pieces</code>, <code>weightKg</code>, <code>volumeCbm</code>, <code>priceXof</code>, <code>clientName</code>, <code>clientPhone</code>, <code>clientEmail</code>, <code>containerId</code>.</td></tr>
+    <tr><td><code>ShipmentEvent</code></td><td>Historique daté : <code>status</code>, <code>location</code>, <code>note</code>, auteur.</td></tr>
+    <tr><td><code>Container</code></td><td>Lots : <code>code</code>, <code>mode</code>, <code>state</code> (OPEN / CLOSED), <code>departureAt</code>, <code>etaAt</code>, <code>closedAt</code>.</td></tr>
+    <tr><td><code>Photo</code></td><td>Photos de contrôle : <code>fileName</code> (UUID), <code>mimeType</code>, <code>size</code>.</td></tr>
+    <tr><td><code>Notification</code></td><td>Alertes WhatsApp : <code>step</code>, <code>to</code>, <code>body</code>, <code>status</code> (PENDING / SENT / SIMULATED / FAILED), <code>attempts</code>, <code>error</code>, <code>providerMessageId</code>.</td></tr>
+    <tr><td><code>StaffNotification</code></td><td>Notifications du back-office : <code>type</code>, <code>title</code>, <code>body</code>, <code>link</code>, <code>roles</code> (destinataires).</td></tr>
+  </table>
+
+  <h2 id="t-15"><span class="n">1.5</span>Cycle de vie d’un colis et droits</h2>
+  <p>Statuts ordonnés : <code>REGISTERED → LOADING → IN_TRANSIT → ARRIVED → READY → DELIVERED</code>. Chaque changement crée un <code>ShipmentEvent</code> et, s’il fait avancer le colis, une alerte WhatsApp pour l’étape.</p>
+  <table>
+    <thead><tr><th style="width:24%">Rôle</th><th style="width:40%">Statuts autorisés</th><th>Règle</th></tr></thead>
+    <tr><td><code>AGENT_GZ</code></td><td>REGISTERED, LOADING, IN_TRANSIT</td><td rowspan="2">Uniquement vers l’avant (sinon <code>409 status_backwards</code>)</td></tr>
+    <tr><td><code>AGENT_LOME</code></td><td>ARRIVED, READY, DELIVERED</td></tr>
+    <tr><td><code>ADMIN</code></td><td>Tous</td><td>Peut corriger en arrière : aucune alerte n’est alors envoyée</td></tr>
+    <tr><td><code>CLIENT</code></td><td>Aucun</td><td>Lecture de ses propres colis uniquement</td></tr>
+  </table>
+  <p>Numéro de suivi : <code>KC-AAAA-XXXXXX</code>, 6 caractères tirés par générateur cryptographique dans un alphabet de 32 signes sans 0/O ni 1/I (plus d’un milliard de combinaisons). Prix calculé par l’API : aérien au kg, maritime au m³, minimum de facturation (<code>api/src/lib/domain.ts</code>).</p>
+</section>
+
+<!-- ========================================================= 2. DÉVELOPPEMENT -->
+<section class="part" data-toc-part="2. Développement">
+  <div class="part-head">
+    <div class="num">02 / développement</div>
+    <h1>Développement</h1>
+    <p>Poste de développement, scripts, tests, migrations et conventions.</p>
+    <span class="tag">node ≥ 22</span>
+  </div>
+
+  <h2 id="t-21"><span class="n">2.1</span>Démarrer en local</h2>
+  <pre class="cmd"><span class="p">$ </span>git clone git@github.com:siaoctawacta/Tracking.git &amp;&amp; cd Tracking
+<span class="p">$ </span>npm run setup    <span class="c"># dépendances, api/.env (secret aléatoire), base SQLite + données de démo</span>
+<span class="p">$ </span>npm run dev      <span class="c"># API :4000 + site http://localhost:5173 (proxy /api)</span></pre>
+  <p><code>npm run dev</code> commence par <code>npm run sync</code> : il installe les dépendances manquantes et applique les migrations en attente. Après un <code>git pull</code>, relancer <code>npm run dev</code> suffit.</p>
+  <table>
+    <thead><tr><th style="width:30%">Compte de démonstration</th><th style="width:36%">Identifiant</th><th>Mot de passe</th></tr></thead>
+    <tr><td>Administrateur</td><td><code>admin@kadercargo.com</code></td><td><code>Admin#Kader2026</code></td></tr>
+    <tr><td>Entrepôt Guangzhou</td><td><code>gz@kadercargo.com</code></td><td><code>Guangzhou#2026</code></td></tr>
+    <tr><td>Agence Lomé</td><td><code>lome@kadercargo.com</code></td><td><code>Lome#Agence2026</code></td></tr>
+    <tr><td>Client</td><td><code>90 11 22 33</code></td><td><code>Client#2026</code></td></tr>
+  </table>
+  <div class="callout"><b class="t">Mode démo</b><p>Sans WhatsApp ni SMTP configurés et hors production, l’API renvoie le code de vérification dans le champ <code>devCode</code> ; le site l’affiche dans un encadré « Mode démo ». Ce champ n’existe jamais quand <code>NODE_ENV=production</code>.</p></div>
+
+  <h2 id="t-22"><span class="n">2.2</span>Scripts</h2>
+  <table>
+    <thead><tr><th style="width:42%">Commande</th><th>Effet</th></tr></thead>
+    <tr><td><code>npm run setup</code></td><td>Installation complète + données de démo (<strong>efface la base locale</strong>)</td></tr>
+    <tr><td><code>npm run dev</code> · <code>npm run sync</code></td><td>Synchronise dépendances et migrations, puis lance API + site</td></tr>
+    <tr><td><code>npm test</code> · <code>npm run typecheck</code> · <code>npm run build</code></td><td>Tests de l’API, vérification TypeScript (api + web), build du site</td></tr>
+    <tr><td><code>npm --prefix api run db:migrate</code></td><td>Crée une migration après modification de <code>schema.prisma</code> (dev)</td></tr>
+    <tr><td><code>npm --prefix api run db:deploy</code></td><td>Applique les migrations en attente (sans perte de données)</td></tr>
+    <tr><td><code>npm --prefix api run db:seed</code></td><td>Réinitialise les données de démo (<strong>efface tout</strong>)</td></tr>
+    <tr><td><code>npm --prefix api run create-admin</code></td><td>Crée ou promeut un administrateur (production)</td></tr>
+    <tr><td><code>npm --prefix api run backup -- fichier.db</code></td><td>Sauvegarde cohérente de la base pendant le fonctionnement</td></tr>
+    <tr><td><code>node brand/build-logo.mjs</code> · <code>node docs/guide/build-pdf.mjs</code></td><td>Régénère le logo · les guides PDF</td></tr>
+  </table>
+
+  <h2 id="t-23"><span class="n">2.3</span>Tests</h2>
+  <p>42 tests d’intégration (vitest + supertest) sur une base SQLite jetable (<code>test.db</code>, recréée à chaque lancement), dans <code>api/test/</code> :</p>
+  <ul>
+    <li><code>api.test.ts</code> — hachage Argon2id, CSRF, erreur identique utilisateur inconnu / mauvais mot de passe, limitation de connexion, drapeaux des cookies, rotation et réutilisation du refresh token, JWT falsifié, masquage du suivi public, droits par rôle, accès client limité à ses colis, fichiers non-images refusés, flux des lots, création de comptes.</li>
+    <li><code>signup.test.ts</code> — inscription par téléphone et par e-mail, codes faux / verrouillage / délai de renvoi, non-divulgation des comptes existants, comptes en attente ou refusés bloqués, validation, liaison téléphone / e-mail / Google / mot de passe, connexion Google (jeton signé localement), flux de notifications et destinataires.</li>
+    <li><code>whatsapp.test.ts</code> — rédaction des 6 messages, variables de modèles, une alerte par étape, aucune alerte en correction arrière, aperçu et renvoi, envoi Twilio et Meta contre un réseau simulé, enregistrement des erreurs.</li>
+  </ul>
+
+  <h2 id="t-24"><span class="n">2.4</span>Conventions</h2>
+  <ul>
+    <li>Toute modification du modèle passe par une migration (<code>db:migrate</code>) versionnée dans <code>api/prisma/migrations/</code>. Après une migration, régénérer le client : <code>npx prisma generate</code> (fait automatiquement par <code>npm install</code>).</li>
+    <li>Chaque entrée de l’API est décrite par un schéma zod <code>.strict()</code> : un champ inconnu est refusé (<code>400 validation_error</code>).</li>
+    <li>Les erreurs métier passent par <code>HttpError(statut, message, code)</code> ; les messages sont en français, destinés à l’utilisateur.</li>
+    <li>Les coordonnées affichées sont dans <code>web/src/lib/site.ts</code>, celles des messages et PDF dans <code>api/src/lib/company.ts</code>, les tarifs dans <code>api/src/lib/domain.ts</code>.</li>
+  </ul>
+</section>
+
+<!-- ========================================================= 3. API -->
+<section class="part" data-toc-part="3. Référence de l’API">
+  <div class="part-head">
+    <div class="num">03 / api</div>
+    <h1>Référence de l’API</h1>
+    <p>Conventions, authentification, liste complète des routes et codes d’erreur.</p>
+    <span class="tag">/api/v1 · JSON · cookies</span>
+  </div>
+
+  <h2 id="t-31"><span class="n">3.1</span>Conventions</h2>
+  <div class="kv">
+    <div>Base</div><div><code>https://kadercargo.com/api/v1</code> (même origine que le site)</div>
+    <div>Format</div><div>JSON (<code>Content-Type: application/json</code>), corps limité à 100 Ko ; <code>multipart/form-data</code> pour les photos</div>
+    <div>Authentification</div><div>Cookies <code>HttpOnly</code> posés par l’API (aucun jeton à gérer côté client) ; requêtes avec <code>credentials: 'include'</code></div>
+    <div>CSRF</div><div>Toute requête POST / PATCH / DELETE doit porter l’en-tête <code>X-CSRF-Token</code> obtenu par <code>GET /auth/csrf</code></div>
+    <div>Erreurs</div><div><code>{"error": {"code": "…", "message": "…", "fields": [{"path", "message"}]}}</code> — <code>fields</code> seulement pour les erreurs de validation</div>
+    <div>Pagination</div><div><code>?page=1&amp;pageSize=25</code> (max 100) sur <code>GET /shipments</code> ; la réponse contient <code>total</code></div>
+  </div>
+
+  <h2 id="t-32"><span class="n">3.2</span>Exemple de session</h2>
+  <pre class="cmd"><span class="c"># 1. Jeton CSRF (renvoyé dans le corps + cookie HttpOnly)</span>
+<span class="p">$ </span>curl -c jar https://kadercargo.com/api/v1/auth/csrf
+{"csrfToken":"V3hF…"}
+
+<span class="c"># 2. Connexion : pose les cookies de session</span>
+<span class="p">$ </span>curl -b jar -c jar -H "X-CSRF-Token: V3hF…" -H "Content-Type: application/json" \
+    -d '{"identifier":"admin@kadercargo.com","password":"…"}' https://kadercargo.com/api/v1/auth/login
+{"user":{"id":"cm…","name":"Kader","email":"admin@kadercargo.com","phone":null,"role":"ADMIN"}}
+
+<span class="c"># 3. Lecture (GET : pas de jeton CSRF)</span>
+<span class="p">$ </span>curl -b jar "https://kadercargo.com/api/v1/shipments?status=IN_TRANSIT&amp;mode=AIR"
+
+<span class="c"># 4. Session expirée (401) : rotation silencieuse puis nouvel essai</span>
+<span class="p">$ </span>curl -b jar -c jar -X POST -H "X-CSRF-Token: V3hF…" https://kadercargo.com/api/v1/auth/refresh</pre>
+
+  <h2 id="t-33"><span class="n">3.3</span>Authentification et compte</h2>
+  <table>
+    <thead><tr><th style="width:12%">Méthode</th><th style="width:36%">Route</th><th style="width:16%">Accès</th><th>Description</th></tr></thead>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/health</td><td class="acc">Public</td><td>Sonde de supervision : <code>{"ok":true}</code></td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/csrf</td><td class="acc">Public</td><td>Émet le jeton CSRF</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/options</td><td class="acc">Public</td><td>Options de connexion actives (ID client Google)</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/login</td><td class="acc">Public · 5/15 min</td><td><code>{identifier, password}</code> — téléphone ou e-mail</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/register/start</td><td class="acc">Public · 60/15 min</td><td><code>{name, identifier, password?}</code> — envoie un code</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/register/verify</td><td class="acc">Public · 60/15 min</td><td><code>{identifier, code}</code> — crée le compte (202, en attente)</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/otp/request</td><td class="acc">Public · 60/15 min</td><td><code>{identifier}</code> — code de connexion</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/otp/verify</td><td class="acc">Public · 60/15 min</td><td><code>{identifier, code}</code> — ouvre la session</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/google</td><td class="acc">Public · 60/15 min</td><td><code>{credential}</code> — jeton d’identité Google</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/refresh</td><td class="acc">Cookie refresh</td><td>Rotation du refresh token</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/auth/logout</td><td class="acc">Connecté</td><td>Révoque la famille de jetons, efface les cookies</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/session · /auth/me</td><td class="acc">— · Connecté</td><td>Sonde sans 401 au démarrage du site · profil</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/account</td><td class="acc">Connecté</td><td>Moyens de connexion liés</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/account/link/start · /link/verify</td><td class="acc">Connecté</td><td>Ajout d’un téléphone / e-mail vérifié par code</td></tr>
+    <tr><td><span class="method m-post">POST</span> <span class="method m-delete">DELETE</span></td><td class="path">/account/link/google</td><td class="acc">Connecté</td><td>Lier / dissocier Google</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/account/password</td><td class="acc">Connecté</td><td><code>{currentPassword?, newPassword}</code></td></tr>
+  </table>
+
+  <h2 id="t-34"><span class="n">3.4</span>Suivi, colis et documents</h2>
+  <table>
+    <thead><tr><th style="width:12%">Méthode</th><th style="width:36%">Route</th><th style="width:16%">Accès</th><th>Description</th></tr></thead>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/tracking/{trackingId}</td><td class="acc">Public · 30/min</td><td>Suivi public, données personnelles masquées</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments</td><td class="acc">Personnel</td><td>Liste filtrable : <code>q</code>, <code>status</code>, <code>mode</code>, <code>unassigned</code>, pagination</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/stats</td><td class="acc">Personnel</td><td>Compteurs par statut et mode, activité récente</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/mine</td><td class="acc">Client</td><td>Colis liés au téléphone / e-mail du client</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments</td><td class="acc">GZ · Admin</td><td>Réception (multipart, jusqu’à 8 photos) + alerte « Enregistré »</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}</td><td class="acc">Personnel · client propriétaire</td><td>Détail, historique, photos (+ alertes pour le personnel)</td></tr>
+    <tr><td><span class="method m-patch">PATCH</span></td><td class="path">/shipments/{id}/status</td><td class="acc">Personnel</td><td><code>{status, note?, location?}</code> selon le rôle</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/alert-preview</td><td class="acc">Personnel</td><td><code>?status=&amp;note=</code> — texte exact du message</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments/{id}/notifications/{nid}/resend</td><td class="acc">Personnel</td><td>Renvoi d’une alerte WhatsApp</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/shipments/{id}/photos</td><td class="acc">GZ · Admin</td><td>Ajout de photos de contrôle</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/photos/{photoId}</td><td class="acc">Personnel · propriétaire</td><td>Image (après contrôle d’accès)</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/invoice.pdf</td><td class="acc">Personnel · propriétaire</td><td>Facture A4</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/shipments/{id}/label.pdf</td><td class="acc">Personnel</td><td>Étiquette 100 × 150 mm (code-barres + QR)</td></tr>
+  </table>
+
+  <h2 id="t-35"><span class="n">3.5</span>Lots, utilisateurs et notifications</h2>
+  <table>
+    <thead><tr><th style="width:12%">Méthode</th><th style="width:36%">Route</th><th style="width:16%">Accès</th><th>Description</th></tr></thead>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/containers · /containers/{id}</td><td class="acc">Personnel</td><td>Lots avec totaux · détail et colis</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/containers</td><td class="acc">GZ · Admin</td><td><code>{mode, departureAt?, etaAt?}</code></td></tr>
+    <tr><td><span class="method m-patch">PATCH</span></td><td class="path">/containers/{id}</td><td class="acc">GZ · Admin</td><td>Dates de départ / d’arrivée</td></tr>
+    <tr><td><span class="method m-post">POST</span> <span class="method m-delete">DELETE</span></td><td class="path">/containers/{id}/shipments[/{shipmentId}]</td><td class="acc">GZ · Admin</td><td><code>{trackingIds: [...]}</code> — ajout (avec refus motivés) / retrait</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/containers/{id}/close</td><td class="acc">GZ · Admin</td><td>Clôture → colis en « Chargement » + alertes</td></tr>
+    <tr><td><span class="method m-patch">PATCH</span></td><td class="path">/containers/{id}/status</td><td class="acc">Personnel</td><td>Mise à jour en masse selon le rôle + notification départ / arrivée</td></tr>
+    <tr><td><span class="method m-get">GET</span> <span class="method m-post">POST</span></td><td class="path">/users</td><td class="acc">Admin</td><td>Liste (<code>?status=PENDING</code>) · création (compte actif)</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/users/{id}/approval</td><td class="acc">Admin</td><td><code>{decision: APPROVE|REJECT, reason?}</code> + avis au client</td></tr>
+    <tr><td><span class="method m-patch">PATCH</span></td><td class="path">/users/{id}</td><td class="acc">Admin</td><td><code>{active}</code> — désactiver révoque les sessions</td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/staff/notifications</td><td class="acc">Personnel</td><td><code>?after=ISO</code> — nouvelles notifications, nombre de non lues</td></tr>
+    <tr><td><span class="method m-post">POST</span></td><td class="path">/staff/notifications/read</td><td class="acc">Personnel</td><td>Tout marquer comme lu</td></tr>
+  </table>
+
+  <h2 id="t-36"><span class="n">3.6</span>Codes d’erreur</h2>
+  <table>
+    <thead><tr><th style="width:9%" class="c">HTTP</th><th style="width:28%">code</th><th>Signification</th></tr></thead>
+    <tr><td class="c">400</td><td><code>validation_error</code></td><td>Corps ou paramètres invalides, champ inconnu (détail dans <code>fields</code>)</td></tr>
+    <tr><td class="c">400</td><td><code>bad_identifier</code> · <code>bad_tracking_id</code></td><td>Téléphone / e-mail ou numéro de suivi mal formé</td></tr>
+    <tr><td class="c">400</td><td><code>otp_invalid</code> · <code>otp_locked</code></td><td>Code faux ou expiré · trop d’essais (5)</td></tr>
+    <tr><td class="c">400</td><td><code>bad_file</code> · <code>no_file</code> · <code>upload_error</code></td><td>Fichier non image, absent ou trop gros (5 Mo)</td></tr>
+    <tr><td class="c">400</td><td><code>bad_password</code> · <code>google_disabled</code></td><td>Mot de passe actuel incorrect · Google non configuré</td></tr>
+    <tr><td class="c">401</td><td><code>unauthenticated</code> · <code>invalid_credentials</code></td><td>Pas de session valide · identifiants refusés (message générique)</td></tr>
+    <tr><td class="c">401</td><td><code>token_reused</code> · <code>google_invalid</code></td><td>Refresh token rejoué (famille révoquée) · jeton Google invalide</td></tr>
+    <tr><td class="c">403</td><td><code>csrf_invalid</code> · <code>forbidden</code> · <code>forbidden_status</code></td><td>Jeton CSRF absent · rôle insuffisant · statut hors du rôle</td></tr>
+    <tr><td class="c">403</td><td><code>account_pending</code> · <code>account_rejected</code></td><td>Compte non validé · refusé par un administrateur</td></tr>
+    <tr><td class="c">404</td><td><code>not_found</code></td><td>Ressource inexistante — ou appartenant à un autre client</td></tr>
+    <tr><td class="c">409</td><td><code>status_backwards</code> · <code>conflict</code> · <code>already_linked</code> · <code>last_method</code></td><td>Statut en arrière · identifiant déjà utilisé · déjà lié · dernier moyen de connexion</td></tr>
+    <tr><td class="c">409</td><td><code>container_closed</code> · <code>container_open</code> · <code>container_empty</code></td><td>Règles des lots (clôture, mise à jour en masse)</td></tr>
+    <tr><td class="c">413</td><td><code>payload_too_large</code></td><td>Corps JSON supérieur à 100 Ko</td></tr>
+    <tr><td class="c">429</td><td><code>rate_limited</code> · <code>otp_cooldown</code> · <code>otp_rate_limited</code></td><td>Limitation par IP · 60 s entre deux codes · 5 codes par heure</td></tr>
+    <tr><td class="c">502</td><td><code>otp_delivery_failed</code></td><td>Le fournisseur WhatsApp ou SMTP a refusé l’envoi du code</td></tr>
+    <tr><td class="c">500</td><td><code>internal</code></td><td>Erreur inattendue (détail uniquement dans le journal serveur)</td></tr>
+  </table>
+</section>
+
+<!-- ========================================================= 4. SÉCURITÉ -->
+<section class="part" data-toc-part="4. Sécurité de l’application">
+  <div class="part-head">
+    <div class="num">04 / sécurité</div>
+    <h1>Sécurité de l’application</h1>
+    <p>Mots de passe, sessions, codes de vérification, contrôle d’accès, entrées, fichiers, en-têtes et limites connues.</p>
+    <span class="tag">OWASP Top 10</span>
+  </div>
+
+  <h2 id="t-41"><span class="n">4.1</span>Mots de passe</h2>
+  <ul>
+    <li>Hachage <strong>Argon2id</strong> (<code>m=65536</code> Kio, <code>t=3</code>, <code>p=1</code>, sortie 32 octets) avec un <strong>sel aléatoire de 16 octets par hachage</strong> ; jamais stockés ni journalisés en clair.</li>
+    <li>Vérification à temps quasi constant : si l’utilisateur n’existe pas, un hachage factice est vérifié quand même ; le message d’erreur est identique (<code>invalid_credentials</code>).</li>
+    <li>Longueur minimale 10 caractères ; formulaires en <code>type="password"</code> avec <code>autocomplete</code> approprié.</li>
+  </ul>
+
+  <h2 id="t-42"><span class="n">4.2</span>Sessions</h2>
+  <table>
+    <thead><tr><th style="width:24%">Élément</th><th>Mise en œuvre</th></tr></thead>
+    <tr><td>Jeton d’accès</td><td>JWT <strong>HS256</strong>, 15 minutes, émetteur <code>kader-cargo</code>, audience <code>kader-cargo-web</code>, identifiant unique (<code>jti</code>) ; contient <code>sub</code>, <code>role</code>, <code>name</code>. L’API est sans état : chaque requête est authentifiée par ce jeton.</td></tr>
+    <tr><td>Refresh token</td><td>32 octets aléatoires, <strong>7 jours</strong>, stocké uniquement haché (SHA-256). <strong>Rotation à chaque usage</strong> ; un jeton déjà utilisé et rejoué révoque toute sa famille (détection de vol).</td></tr>
+    <tr><td>Cookies</td><td><code>__Host-jwt</code>, <code>__Host-rt</code>, <code>__Host-csrf</code> : <code>HttpOnly; Secure; SameSite=Strict; Path=/</code>, sans domaine. Inaccessibles au JavaScript (pas de <code>localStorage</code>).</td></tr>
+    <tr><td>Fin de session</td><td>Déconnexion, désactivation ou refus d’un compte : révocation des refresh tokens en base.</td></tr>
+    <tr><td>Secret</td><td><code>JWT_SECRET</code> obligatoire en production (≥ 32 caractères) : l’API refuse de démarrer sinon.</td></tr>
+  </table>
+
+  <h2 id="t-43"><span class="n">4.3</span>Protection CSRF et CORS</h2>
+  <p>En plus de <code>SameSite=Strict</code>, toute requête qui modifie des données doit présenter dans l’en-tête <code>X-CSRF-Token</code> la même valeur que le cookie <code>__Host-csrf</code> (comparaison à temps constant). Le jeton est donné dans le corps de <code>GET /auth/csrf</code>, ce qui fonctionne aussi si le site et l’API sont sur des origines différentes. CORS n’est activé que si <code>CORS_ORIGINS</code> est renseigné (origines explicites, <code>credentials</code>, méthodes GET/POST/PATCH/DELETE).</p>
+
+  <h2 id="t-44"><span class="n">4.4</span>Codes de vérification et inscription</h2>
+  <ul>
+    <li>6 chiffres tirés par <code>crypto.randomInt</code>. Seul un <strong>HMAC-SHA256</strong> (clé : <code>JWT_SECRET</code>, message : destinataire + code) est stocké.</li>
+    <li>Validité 10 minutes, <strong>5 essais</strong> puis verrouillage ; 60 s entre deux envois, 5 codes par heure et par destinataire ; un nouveau code invalide le précédent ; consommation atomique (un code ne sert qu’une fois).</li>
+    <li><strong>Pas d’énumération des clients</strong> : une inscription sur un numéro existant envoie un code de connexion et répond exactement comme une nouvelle inscription ; une demande de code pour un compte inconnu répond pareil sans rien envoyer.</li>
+    <li>Un téléphone ou un e-mail n’est enregistré sur un compte qu’après preuve (code, Google, ou création par le personnel), car il donne accès aux colis enregistrés à ce numéro.</li>
+    <li>Comptes auto-inscrits en <code>PENDING</code> : aucune session possible (mot de passe, code, Google, refresh) avant validation par un administrateur.</li>
+  </ul>
+
+  <h2 id="t-45"><span class="n">4.5</span>Connexion Google</h2>
+  <p>Le jeton d’identité Google est vérifié par l’API (bibliothèque <code>jose</code>) : signature contre les clés publiques de Google, audience = <code>GOOGLE_CLIENT_ID</code>, émetteur <code>accounts.google.com</code>, expiration. Un compte existant n’est lié automatiquement que si Google certifie l’adresse (<code>email_verified</code>).</p>
+
+  <h2 id="t-46"><span class="n">4.6</span>Contrôle d’accès</h2>
+  <ul>
+    <li><strong>Par rôle</strong> sur chaque route (middleware <code>requireRole</code>) et par statut (tableau 1.5).</li>
+    <li><strong>Par objet</strong> : un client n’accède qu’aux colis dont le téléphone ou l’e-mail correspond à son compte ; sinon l’API répond <code>404</code> (et non 403) pour ne pas révéler l’existence du colis.</li>
+    <li>Le site masque les boutons non autorisés, mais <strong>l’API reste la seule autorité</strong>.</li>
+    <li>Suivi public : nom réduit (« Afi M. »), téléphone masqué (« +228 •• •• 33 ») ; 30 requêtes par minute et par IP contre l’énumération des numéros.</li>
+  </ul>
+
+  <h2 id="t-47"><span class="n">4.7</span>Entrées, fichiers et erreurs</h2>
+  <ul>
+    <li><strong>Injection SQL</strong> : uniquement des requêtes Prisma paramétrées, aucune requête SQL construite à la main.</li>
+    <li><strong>Validation</strong> : schémas zod <code>.strict()</code> sur tous les corps et paramètres ; JSON limité à 100 Ko.</li>
+    <li><strong>Photos</strong> : JPEG / PNG / WebP uniquement, vérifiés par <strong>signature binaire</strong> (le type annoncé par le navigateur ne suffit pas) ; 5 Mo, 8 fichiers ; nom aléatoire (UUID), droits 600, servies après contrôle d’accès avec <code>X-Content-Type-Options: nosniff</code>.</li>
+    <li><strong>XSS</strong> : React échappe tout le contenu ; aucune insertion de HTML brut ; CSP stricte sur le site.</li>
+    <li><strong>Erreurs</strong> : aucune trace technique renvoyée au client (détails seulement dans le journal).</li>
+  </ul>
+
+  <h2 id="t-48"><span class="n">4.8</span>En-têtes HTTP</h2>
+  <table>
+    <thead><tr><th style="width:20%">Réponse</th><th>En-têtes</th></tr></thead>
+    <tr><td>API (helmet)</td><td><code>Content-Security-Policy: default-src 'none'; frame-ancestors 'none'</code>, <code>Strict-Transport-Security</code> (2 ans, preload), <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy: no-referrer</code>, <code>Cross-Origin-Resource-Policy: same-site</code>, pas de <code>X-Powered-By</code>.</td></tr>
+    <tr><td>Site (Caddy)</td><td>CSP <code>default-src 'self'</code> (scripts, styles et polices du site uniquement ; exceptions limitées à <code>accounts.google.com/gsi</code>), HSTS, <code>X-Frame-Options: DENY</code>, <code>nosniff</code>, <code>Permissions-Policy</code>. Le thème est appliqué par un script externe (<code>theme-init.js</code>) pour éviter tout script en ligne.</td></tr>
+  </table>
+
+  <h2 id="t-49"><span class="n">4.9</span>Limitation de débit</h2>
+  <table>
+    <thead><tr><th style="width:44%">Routes</th><th>Limite (par adresse IP)</th></tr></thead>
+    <tr><td><code>POST /auth/login</code></td><td>5 par 15 minutes (<code>LOGIN_RATE_LIMIT</code>)</td></tr>
+    <tr><td>Inscription, codes, Google</td><td>60 par 15 minutes (beaucoup de clients mobiles partagent une même IP d’opérateur) + limites par destinataire (4.4)</td></tr>
+    <tr><td><code>GET /tracking/…</code></td><td>30 par minute</td></tr>
+  </table>
+  <p>Derrière Caddy, <code>TRUST_PROXY=1</code> est indispensable pour que l’IP réelle du client soit utilisée.</p>
+
+  <h2 id="t-410"><span class="n">4.10</span>Limites connues et recommandations</h2>
+  <ul>
+    <li><strong>Une seule instance</strong> : les compteurs de limitation sont en mémoire et la base est un fichier SQLite. Pour plusieurs serveurs : PostgreSQL (fournisseur Prisma + adaptateur <code>@prisma/adapter-pg</code>, nouvelles migrations) et un stockage partagé des compteurs.</li>
+    <li><strong>Sans WhatsApp ni SMTP configurés</strong>, les codes sont écrits dans le journal du serveur (mode « simulé ») : configurer les fournisseurs avant d’ouvrir les inscriptions.</li>
+    <li>Pas de double authentification pour le personnel : recommandé si l’équipe grandit (un code par e-mail à chaque connexion, par exemple).</li>
+    <li>Les codes et jetons expirés restent en base : une purge périodique est recommandée à terme (tables <code>OtpCode</code>, <code>RefreshToken</code>).</li>
+    <li>Les notifications du back-office sont lues par interrogation toutes les 10 secondes (simple et compatible avec une API sans état).</li>
+  </ul>
+</section>
+
+<!-- ========================================================= 5. INTÉGRATIONS -->
+<section class="part" data-toc-part="5. Intégrations">
+  <div class="part-head">
+    <div class="num">05 / intégrations</div>
+    <h1>Intégrations</h1>
+    <p>WhatsApp, e-mail et connexion Google : fonctionnement et configuration.</p>
+    <span class="tag">twilio · meta · smtp · google</span>
+  </div>
+
+  <h2 id="t-51"><span class="n">5.1</span>WhatsApp</h2>
+  <p>Code : <code>api/src/lib/whatsapp.ts</code>. Fournisseur choisi par <code>WHATSAPP_PROVIDER</code> ou détecté selon les identifiants présents ; sans identifiants : mode simulé.</p>
+  <ul>
+    <li><strong>Alertes d’étape</strong> : un message par étape franchie vers l’avant (y compris en masse), au plus un par étape et par colis ; envoi en arrière-plan, 3 tentatives (immédiate, +30 s, +2 min) ; après le dernier échec, notification <code>WHATSAPP_FAILED</code> aux administrateurs.</li>
+    <li><strong>Codes et avis de compte</strong> : envoi immédiat (la réponse HTTP attend le résultat).</li>
+    <li><strong>Meta</strong> : modèles approuvés nommés <code>{META_TEMPLATE_PREFIX}{étape}</code>, variables du corps <code>{{1}}</code> prénom, <code>{{2}}</code> numéro de suivi, <code>{{3}}</code> détail ; le modèle <code>kader_otp</code> (catégorie <em>Authentification</em>) porte aussi le code dans son bouton « Copier ».</li>
+    <li><strong>Twilio</strong> : texte libre, ou modèles Content si <code>TWILIO_CONTENT_SIDS</code> associe une étape à un identifiant <code>HX…</code>.</li>
+  </ul>
+  <table>
+    <thead><tr><th style="width:30%">Modèle</th><th style="width:20%">Catégorie</th><th>Usage</th></tr></thead>
+    <tr><td><code>kader_registered</code> … <code>kader_delivered</code></td><td>Utility</td><td>6 alertes d’étape (registered, loading, in_transit, arrived, ready, delivered)</td></tr>
+    <tr><td><code>kader_otp</code></td><td>Authentification</td><td>Code de vérification</td></tr>
+    <tr><td><code>kader_account</code></td><td>Utility</td><td>Compte validé / refusé</td></tr>
+  </table>
+  <p>Les textes à soumettre à Meta ou Twilio sont dans <code>docs/whatsapp-alertes.md</code>.</p>
+
+  <h2 id="t-52"><span class="n">5.2</span>E-mail</h2>
+  <p>Code : <code>api/src/lib/mailer.ts</code> (nodemailer, SMTP). Avec Gmail : validation en deux étapes, puis un <strong>mot de passe d’application</strong> dans <code>SMTP_PASS</code>, <code>SMTP_HOST=smtp.gmail.com</code>, port 465 sécurisé. Gmail limite le volume quotidien ; pour un volume plus important, utiliser un service d’envoi dédié (mêmes variables SMTP). Les e-mails sont envoyés en texte et en HTML aux couleurs de Kader Cargo.</p>
+
+  <h2 id="t-53"><span class="n">5.3</span>Connexion Google</h2>
+  <ol class="steps">
+    <li><strong>console.cloud.google.com</strong> : créer un projet, configurer l’écran de consentement OAuth (nom, logo, e-mail d’assistance).</li>
+    <li><strong>Identifiants → ID client OAuth</strong>, type « Application Web », origine JavaScript autorisée : <code>https://kadercargo.com</code>.</li>
+    <li>Renseigner <code>GOOGLE_CLIENT_ID</code> et redémarrer l’API. Le site le récupère via <code>GET /auth/options</code> : aucune reconstruction du site n’est nécessaire.</li>
+  </ol>
+</section>
+
+<!-- ========================================================= 6. DÉPLOIEMENT -->
+<section class="part" data-toc-part="6. Déploiement sur un serveur">
+  <div class="part-head">
+    <div class="num">06 / déploiement</div>
+    <h1>Déploiement sur un serveur</h1>
+    <p>Installation complète sur Ubuntu 24.04 avec HTTPS, service système et sauvegardes.</p>
+    <span class="tag">ubuntu 24.04 · caddy · systemd</span>
+  </div>
+
+  <div class="callout ok"><b class="t">Procédure testée</b><p>Les commandes ont été exécutées sur Ubuntu 24.04 avec les mêmes chemins : installation, HTTPS, création de l’administrateur, colis avec photo, PDF, mise à jour, sauvegarde et restauration. Le service systemd a été validé (<code>systemd-analyze verify</code>) et sa commande exécutée ; vérifiez son démarrage sur le serveur avec <code>systemctl status</code>. Remplacez <code>kadercargo.com</code> par votre domaine.</p></div>
+
+  <h2 id="t-61"><span class="n">6.1</span>Prérequis</h2>
+  <table>
+    <thead><tr><th style="width:28%">Élément</th><th>Détail</th></tr></thead>
+    <tr><td><strong>Serveur (VPS)</strong></td><td>Ubuntu 24.04 LTS, 2 vCPU, 2 à 4 Go de RAM, 40 Go SSD, accès root en SSH.</td></tr>
+    <tr><td><strong>Nom de domaine</strong></td><td>Avec accès à la zone DNS.</td></tr>
+    <tr><td><strong>Code</strong></td><td>Dépôt privé <code>siaoctawacta/Tracking</code> : clé de déploiement (étape 5).</td></tr>
+    <tr><td><strong>Fournisseurs</strong></td><td>WhatsApp (Twilio ou Meta), compte Gmail pour l’envoi d’e-mails, Google Cloud (facultatif).</td></tr>
+  </table>
+  <p>Arborescence en production : code dans <code>/srv/kader-cargo</code> (propriété de root, lecture seule pour l’API), données dans <code>/var/lib/kader-cargo</code> (utilisateur système <code>kader</code>), sauvegardes dans <code>/var/backups/kader-cargo</code>.</p>
+
+  <h2 id="t-62"><span class="n">6.2</span>Installation pas à pas</h2>
+  <h3>Étape 1 — DNS</h3>
+  <p>Deux enregistrements <strong>A</strong> : <code>kadercargo.com</code> et <code>www.kadercargo.com</code> vers l’IP du serveur.</p>
+  <h3>Étape 2 — Système</h3>
+  <pre class="cmd"><span class="p">$ </span>ssh root@ADRESSE_IP_DU_SERVEUR
+<span class="p">$ </span>apt update &amp;&amp; apt upgrade -y
+<span class="p">$ </span>apt install -y git curl caddy build-essential python3 ufw
+<span class="p">$ </span>curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+<span class="p">$ </span>apt install -y nodejs &amp;&amp; node -v       <span class="c"># v22.x</span></pre>
+  <h3>Étape 3 — Pare-feu</h3>
+  <pre class="cmd"><span class="p">$ </span>ufw allow OpenSSH &amp;&amp; ufw allow 80,443/tcp &amp;&amp; ufw enable</pre>
+  <h3>Étape 4 — Utilisateur et données</h3>
+  <pre class="cmd"><span class="p">$ </span>useradd --system --home-dir /var/lib/kader-cargo --shell /usr/sbin/nologin kader
+<span class="p">$ </span>mkdir -p /var/lib/kader-cargo/uploads
+<span class="p">$ </span>chown -R kader:kader /var/lib/kader-cargo &amp;&amp; chmod 750 /var/lib/kader-cargo</pre>
+  <h3>Étape 5 — Code (clé de déploiement en lecture seule)</h3>
+  <pre class="cmd"><span class="p">$ </span>ssh-keygen -t ed25519 -f /root/.ssh/kader_deploy -N ""
+<span class="p">$ </span>cat /root/.ssh/kader_deploy.pub
+<span class="c"># → GitHub : Tracking › Settings › Deploy keys › Add deploy key (sans « Allow write access »)</span>
+<span class="p">$ </span>GIT_SSH_COMMAND="ssh -i /root/.ssh/kader_deploy" \
+    git clone git@github.com:siaoctawacta/Tracking.git /srv/kader-cargo
+<span class="p">$ </span>git -C /srv/kader-cargo config core.sshCommand "ssh -i /root/.ssh/kader_deploy"</pre>
+  <h3>Étape 6 — Configuration</h3>
+  <pre class="cmd"><span class="p">$ </span>cd /srv/kader-cargo &amp;&amp; cp deploy/env.production.example api/.env
+<span class="p">$ </span>node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"  <span class="c"># → JWT_SECRET</span>
+<span class="p">$ </span>nano api/.env              <span class="c"># JWT_SECRET, PUBLIC_WEB_URL, WhatsApp, SMTP (annexe A)</span>
+<span class="p">$ </span>chown root:kader api/.env &amp;&amp; chmod 640 api/.env</pre>
+  <h3>Étape 7 — Installation, base et premier administrateur</h3>
+  <pre class="cmd"><span class="p">$ </span>npm --prefix api ci &amp;&amp; npm --prefix web ci &amp;&amp; npm --prefix web run build
+<span class="p">$ </span>cd /srv/kader-cargo/api
+<span class="p">$ </span>runuser -u kader -- ./node_modules/.bin/prisma migrate deploy
+<span class="p">$ </span>runuser -u kader -- npm run create-admin -- --name "Kader" --email admin@kadercargo.com
+<span class="c">  Mot de passe (10 caractères min.) :     ← saisi sans affichage</span></pre>
+  <div class="callout warn"><b class="t">Jamais « npm run setup » ni « db:seed » en production</b><p>Ces commandes chargent les données de démonstration et <strong>effacent toutes les données</strong>.</p></div>
+  <h3>Étape 8 — Service systemd</h3>
+  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/kader-cargo-api.service /etc/systemd/system/
+<span class="p">$ </span>systemctl daemon-reload &amp;&amp; systemctl enable --now kader-cargo-api
+<span class="p">$ </span>systemctl status kader-cargo-api                 <span class="c"># active (running)</span>
+<span class="p">$ </span>curl http://127.0.0.1:4000/api/v1/health         <span class="c"># {"ok":true}</span></pre>
+  <p>Le service tourne sous l’utilisateur <code>kader</code>, redémarre automatiquement et est isolé (<code>ProtectSystem=strict</code>, écriture limitée à <code>/var/lib/kader-cargo</code>, aucune capacité, familles réseau restreintes) : <code>systemd-analyze security</code> le classe <strong>2.9 OK</strong>.</p>
+  <h3>Étape 9 — HTTPS avec Caddy</h3>
+  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/Caddyfile /etc/caddy/Caddyfile
+<span class="p">$ </span>nano /etc/caddy/Caddyfile        <span class="c"># remplacer kadercargo.com</span>
+<span class="p">$ </span>systemctl reload caddy</pre>
+  <h3>Étape 10 — Sauvegardes</h3>
+  <pre class="cmd"><span class="p">$ </span>cp /srv/kader-cargo/deploy/cron.kader-cargo /etc/cron.d/kader-cargo
+<span class="p">$ </span>/srv/kader-cargo/deploy/backup.sh</pre>
+  <p>Ouvrez ensuite <code>https://kadercargo.com</code> et connectez-vous avec le compte administrateur (onglet « Mot de passe »).</p>
+
+  <h2 id="t-63"><span class="n">6.3</span>Fichiers du dossier deploy/</h2>
+  <table>
+    <thead><tr><th style="width:34%">Fichier</th><th>Rôle</th></tr></thead>
+    <tr><td><code>Caddyfile</code></td><td>Certificat HTTPS automatique, en-têtes de sécurité du site, fichiers statiques avec retour sur <code>index.html</code>, proxy <code>/api</code>, cache long des fichiers versionnés, redirection <code>www</code>.</td></tr>
+    <tr><td><code>kader-cargo-api.service</code></td><td>Service systemd isolé de l’API.</td></tr>
+    <tr><td><code>env.production.example</code></td><td>Modèle de configuration de production.</td></tr>
+    <tr><td><code>update.sh</code></td><td>Mise à jour complète (section 7.1).</td></tr>
+    <tr><td><code>backup.sh</code> · <code>cron.kader-cargo</code></td><td>Sauvegarde nocturne (section 7.2).</td></tr>
+  </table>
+</section>
+
+<!-- ========================================================= 7. EXPLOITATION -->
+<section class="part" data-toc-part="7. Exploitation">
+  <div class="part-head">
+    <div class="num">07 / exploitation</div>
+    <h1>Exploitation</h1>
+    <p>Mises à jour, sauvegardes et restauration, surveillance, dépannage et mise en production.</p>
+    <span class="tag">run · backup · monitor</span>
+  </div>
+
+  <h2 id="t-71"><span class="n">7.1</span>Mettre à jour</h2>
+  <pre class="cmd"><span class="p">$ </span>/srv/kader-cargo/deploy/update.sh</pre>
+  <p>Enchaîne : sauvegarde → <code>git pull --ff-only origin main</code> → <code>npm ci</code> (api, web) → <code>prisma migrate deploy</code> (sans perte de données) → build du site → redémarrage → vérification de <code>/api/v1/health</code> pendant 20 s. En cas d’échec, il l’indique avec la commande du journal à consulter.</p>
+
+  <h2 id="t-72"><span class="n">7.2</span>Sauvegardes et restauration</h2>
+  <p><code>backup.sh</code> (chaque nuit à 2 h 30) crée dans <code>/var/backups/kader-cargo</code> une copie cohérente de la base faite <strong>pendant le fonctionnement</strong> (API de sauvegarde SQLite) et une archive des photos, puis supprime ce qui a plus de 14 jours.</p>
+  <div class="callout warn"><b class="t">Copie hors serveur</b><p>Copiez régulièrement ce dossier ailleurs (stockage cloud, autre serveur — par exemple avec <code>rclone</code> ou <code>scp</code>) et activez si possible les instantanés de votre hébergeur.</p></div>
+  <pre class="cmd"><span class="c"># Restauration (testée)</span>
+<span class="p">$ </span>systemctl stop kader-cargo-api
+<span class="p">$ </span>cp /var/lib/kader-cargo/kader.db /var/lib/kader-cargo/kader.db.avant-restauration
+<span class="p">$ </span>cp /var/backups/kader-cargo/kader-AAAA-MM-JJ_HHMM.db /var/lib/kader-cargo/kader.db
+<span class="p">$ </span>rm -f /var/lib/kader-cargo/kader.db-wal /var/lib/kader-cargo/kader.db-shm
+<span class="p">$ </span>tar -xzf /var/backups/kader-cargo/photos-AAAA-MM-JJ_HHMM.tar.gz -C /var/lib/kader-cargo
+<span class="p">$ </span>chown -R kader:kader /var/lib/kader-cargo
+<span class="p">$ </span>systemctl start kader-cargo-api</pre>
+  <p>Les données reviennent à l’état du moment de la sauvegarde.</p>
+
+  <h2 id="t-73"><span class="n">7.3</span>Surveillance et dépannage</h2>
+  <pre class="cmd"><span class="p">$ </span>systemctl status kader-cargo-api      <span class="c"># état</span>
+<span class="p">$ </span>journalctl -u kader-cargo-api -f      <span class="c"># journal en direct</span>
+<span class="p">$ </span>journalctl -u caddy -n 50             <span class="c"># HTTPS</span>
+<span class="p">$ </span>curl https://kadercargo.com/api/v1/health</pre>
+  <p>Surveillez <code>/api/v1/health</code> avec un service externe (UptimeRobot, Better Stack…) pour être alerté d’une panne.</p>
+  <table>
+    <thead><tr><th style="width:32%">Symptôme</th><th>Cause probable et action</th></tr></thead>
+    <tr><td>Site inaccessible</td><td>DNS, pare-feu (<code>ufw status</code>), <code>systemctl status caddy</code>.</td></tr>
+    <tr><td>502 Bad Gateway</td><td>API arrêtée : lire le journal, puis <code>systemctl restart kader-cargo-api</code>.</td></tr>
+    <tr><td>« JWT_SECRET must be set… »</td><td>Secret absent ou trop court dans <code>api/.env</code>.</td></tr>
+    <tr><td>Alertes « Simulé »</td><td>Aucun fournisseur WhatsApp configuré.</td></tr>
+    <tr><td>Alertes « Échec »</td><td>Identifiants, modèles non approuvés ou numéro invalide : message d’erreur dans la fiche du colis et dans le journal.</td></tr>
+    <tr><td>E-mails non reçus</td><td>Mot de passe d’application Gmail, dossier spam, journal (<code>[otp] delivery failed</code>).</td></tr>
+    <tr><td>Bouton Google absent</td><td><code>GOOGLE_CLIENT_ID</code> vide ou origine non autorisée dans Google Cloud.</td></tr>
+    <tr><td>Polices ou styles bloqués</td><td>CSP du Caddyfile modifiée : la remettre telle que fournie.</td></tr>
+  </table>
+
+  <h2 id="t-74"><span class="n">7.4</span>Check-list de mise en production</h2>
+  <ul>
+    <li><code>NODE_ENV=production</code>, <code>JWT_SECRET</code> unique et secret, <code>api/.env</code> en 640 (root:kader).</li>
+    <li>SSH par clé uniquement, mot de passe root désactivé, <code>unattended-upgrades</code> actif, pare-feu limité à SSH/80/443.</li>
+    <li>WhatsApp et SMTP configurés et testés <strong>avant</strong> d’ouvrir les inscriptions ; modèles approuvés.</li>
+    <li><code>PUBLIC_WEB_URL</code> et <code>TRUST_PROXY=1</code> renseignés.</li>
+    <li>Sauvegarde nocturne active, copiée hors serveur, restauration testée.</li>
+    <li>Un compte nominatif par employé ; désactivation au départ.</li>
+    <li>Supervision externe de <code>/api/v1/health</code>.</li>
+  </ul>
+</section>
+
+<!-- ========================================================= ANNEXES -->
+<section class="part" data-toc-part="Annexes">
+  <div class="part-head">
+    <div class="num">annexes</div>
+    <h1>Référence de configuration</h1>
+    <p>Variables d’environnement et commandes utiles.</p>
+    <span class="tag">api/.env</span>
+  </div>
+
+  <h2 id="t-a"><span class="n">A</span>Variables d’environnement (api/.env)</h2>
+  <table>
+    <thead><tr><th style="width:34%">Variable</th><th style="width:22%">Production</th><th>Rôle</th></tr></thead>
+    <tr><td><code>NODE_ENV</code></td><td><code>production</code></td><td>Cookies <code>__Host-</code> sécurisés, aucun <code>devCode</code>, secret obligatoire</td></tr>
+    <tr><td><code>PORT</code></td><td><code>4000</code></td><td>Port local de l’API</td></tr>
+    <tr><td><code>TRUST_PROXY</code></td><td><code>1</code></td><td>Nombre de proxys devant l’API (Caddy)</td></tr>
+    <tr><td><code>DATABASE_URL</code></td><td><code>file:/var/lib/kader-cargo/kader.db</code></td><td>Base SQLite</td></tr>
+    <tr><td><code>UPLOAD_DIR</code></td><td><code>/var/lib/kader-cargo/uploads</code></td><td>Photos de contrôle</td></tr>
+    <tr><td><code>JWT_SECRET</code></td><td>48 octets aléatoires</td><td>Signature des sessions, clé HMAC des codes</td></tr>
+    <tr><td><code>LOGIN_RATE_LIMIT</code></td><td><code>5</code></td><td>Essais de mot de passe par IP / 15 min</td></tr>
+    <tr><td><code>PUBLIC_WEB_URL</code></td><td><code>https://kadercargo.com</code></td><td>Liens dans les messages et e-mails</td></tr>
+    <tr><td><code>CORS_ORIGINS</code></td><td>vide</td><td>Seulement si le site est servi depuis une autre origine</td></tr>
+    <tr><td><code>COOKIE_SECURE</code></td><td>— (forcé)</td><td>Développement uniquement</td></tr>
+    <tr><td><code>WHATSAPP_PROVIDER</code></td><td><code>twilio</code> / <code>meta</code></td><td>Choix explicite du fournisseur</td></tr>
+    <tr><td><code>TWILIO_ACCOUNT_SID</code>, <code>TWILIO_AUTH_TOKEN</code>, <code>TWILIO_WHATSAPP_FROM</code>, <code>TWILIO_CONTENT_SIDS</code></td><td>selon compte</td><td>Twilio (modèles en JSON : <code>{"OTP":"HX…"}</code>)</td></tr>
+    <tr><td><code>META_WHATSAPP_TOKEN</code>, <code>META_WHATSAPP_PHONE_NUMBER_ID</code>, <code>META_TEMPLATE_PREFIX</code>, <code>META_TEMPLATE_LANGUAGE</code></td><td>selon compte</td><td>Meta Cloud API (préfixe <code>kader_</code>, langue <code>fr</code>)</td></tr>
+    <tr><td><code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_SECURE</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code>, <code>MAIL_FROM</code></td><td>Gmail : 465, true</td><td>Envoi d’e-mails</td></tr>
+    <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>facultatif</td><td>Connexion Google</td></tr>
+  </table>
+
+  <h2 id="t-b"><span class="n">B</span>Commandes utiles</h2>
+  <pre class="cmd"><span class="c"># Créer un autre administrateur / réinitialiser son mot de passe</span>
+<span class="p">$ </span>cd /srv/kader-cargo/api &amp;&amp; runuser -u kader -- npm run create-admin -- --name "Nom" --email nom@kadercargo.com
+
+<span class="c"># Sauvegarde manuelle</span>
+<span class="p">$ </span>/srv/kader-cargo/deploy/backup.sh
+
+<span class="c"># Redémarrer après une modification de api/.env</span>
+<span class="p">$ </span>systemctl restart kader-cargo-api
+
+<span class="c"># Vérifier la configuration Caddy avant de la recharger</span>
+<span class="p">$ </span>caddy validate --config /etc/caddy/Caddyfile
+
+<span class="c"># Niveau d’isolation du service</span>
+<span class="p">$ </span>systemd-analyze security kader-cargo-api</pre>
+</section>
+
+</body>
+</html>
