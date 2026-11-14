@@ -24,7 +24,7 @@ npm --prefix web run build
 echo "→ Redémarrage de l'API"
 systemctl restart kader-cargo-api
 for i in $(seq 1 20); do
-  if curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null; then echo "✓ Kader Cargo est à jour et en ligne"; exit 0; fi
+  if curl -fsS http://127.0.0.1:4000/api/v1/health >/dev/null 2>&1; then echo "✓ Kader Cargo est à jour et en ligne"; exit 0; fi
   sleep 1
 done
 echo "✗ L'API ne répond pas : journalctl -u kader-cargo-api -n 50" >&2
