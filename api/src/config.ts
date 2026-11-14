@@ -41,7 +41,8 @@ export const config = {
     csrf: cookieSecure ? '__Host-csrf' : 'csrf',
   },
   loginRateLimit: Number(env.LOGIN_RATE_LIMIT ?? 5),
-  uploadDir: new URL('../uploads/', import.meta.url).pathname,
+  /** Quality-control photos. In production, point it outside the code folder (e.g. /var/lib/kader-cargo/uploads). */
+  uploadDir: env.UPLOAD_DIR || new URL('../uploads/', import.meta.url).pathname,
   maxPhotoBytes: 5 * 1024 * 1024,
   /** Public URL of the SPA, used for tracking links in WhatsApp messages (omitted when empty). */
   publicWebUrl: (env.PUBLIC_WEB_URL ?? '').replace(/\/+$/, ''),

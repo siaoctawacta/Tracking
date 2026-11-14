@@ -166,10 +166,21 @@ Le navigateur interroge l’API toutes les 10 s (`GET /api/v1/staff/notification
 
 ## Mise en production
 
-1. `api/.env` : `NODE_ENV=production`, `JWT_SECRET` (≥ 48 octets aléatoires), `DATABASE_URL`, `CORS_ORIGINS=https://kadercargo.com`, `TRUST_PROXY=1` derrière un reverse-proxy. En production les cookies sont forcés en `Secure` avec préfixe `__Host-`.
-2. `npm --prefix api run db:deploy`, puis `npm --prefix api start` (TLS 1.3 terminé par le reverse-proxy).
-3. SPA : `VITE_API_URL=https://api.kadercargo.com npm run build`, puis déployer `web/dist` sur le CDN (ajuster `connect-src` dans `_headers`). Servir SPA et API sur le même site (ex. `kadercargo.com` / `api.kadercargo.com`) pour que les cookies `SameSite=Strict` soient envoyés.
-4. WhatsApp : Twilio ou Meta Cloud API, voir [docs/whatsapp-alertes.md](docs/whatsapp-alertes.md). Renseigner aussi `PUBLIC_WEB_URL` pour inclure le lien de suivi dans les messages. Sans identifiants, les messages sont simulés (journalisés et visibles dans le back-office).
+Le guide complet (utilisation + déploiement, en PDF à remettre au client) : **[docs/Kader-Cargo-Guide.pdf](docs/Kader-Cargo-Guide.pdf)**.
+
+Résumé : un serveur Ubuntu 24.04, Caddy (HTTPS automatique) devant l’API Node.js lancée par systemd, base SQLite et photos dans `/var/lib/kader-cargo`, sauvegarde chaque nuit. Les fichiers prêts à copier sont dans [`deploy/`](deploy/) :
+
+| Fichier | Rôle |
+|---|---|
+| `deploy/Caddyfile` | HTTPS, en-têtes de sécurité, site + proxy `/api` |
+| `deploy/kader-cargo-api.service` | service systemd isolé (redémarrage automatique) |
+| `deploy/env.production.example` | modèle de `api/.env` pour la production |
+| `deploy/update.sh` | mise à jour : sauvegarde, `git pull`, dépendances, migrations, build, redémarrage, vérification |
+| `deploy/backup.sh` · `deploy/cron.kader-cargo` | sauvegarde nocturne (base + photos, 14 jours) |
+
+Premier administrateur sur un serveur vierge (sans données de démo) : `npm --prefix api run create-admin -- --name "Kader" --email admin@kadercargo.com`. **Ne jamais lancer `npm run setup` ni `db:seed` en production** : ces commandes effacent les données.
+
+Pour régénérer le PDF après une modification de `docs/guide/` : `node docs/guide/build-pdf.mjs` (nécessite Playwright, poppler-utils et pypdf).
 
 ## À compléter avant lancement
 

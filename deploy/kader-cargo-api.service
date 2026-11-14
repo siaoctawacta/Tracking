@@ -1,0 +1,41 @@
+# Service systemd de l'API Kader Cargo.
+# Copier vers /etc/systemd/system/, puis : systemctl daemon-reload && systemctl enable --now kader-cargo-api
+[Unit]
+Description=Kader Cargo API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kader
+Group=kader
+WorkingDirectory=/srv/kader-cargo/api
+ExecStart=/usr/bin/node --env-file=.env --import tsx src/server.ts
+Restart=always
+RestartSec=5
+
+# Durcissement : l'API ne peut écrire que dans /var/lib/kader-cargo (base + photos).
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/kader-cargo
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectProc=invisible
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target
