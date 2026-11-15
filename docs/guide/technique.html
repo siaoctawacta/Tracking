@@ -463,11 +463,15 @@
   <div class="callout warn"><b class="t">À ne pas faire</b><p>Ne définissez pas <code>NODE_ENV</code> sur Vercel : l’installation ignorerait les outils de build et le déploiement échouerait (la configuration de production est déjà appliquée automatiquement sur Vercel). Ne renseignez pas les variables de base pour l’environnement <em>Preview</em>, sauf avec un second projet Supabase : les déploiements de prévisualisation ne doivent pas toucher les données réelles.</p></div>
 
   <h2 id="t-64"><span class="n">6.4</span>Premier administrateur</h2>
-  <p>Depuis un ordinateur disposant du dépôt et de Node.js 22, avec la chaîne <strong>Session pooler</strong> :</p>
-  <pre class="cmd"><span class="p">$ </span>npm --prefix server ci
-<span class="p">$ </span>DATABASE_URL="postgresql://postgres.xxxx:MOT_DE_PASSE@…pooler.supabase.com:5432/postgres" \
-    npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com
-<span class="c">  Mot de passe (10 caractères min.) :     ← saisi sans affichage</span></pre>
+  <p>Depuis un ordinateur disposant du dépôt à jour et de Node.js 22, avec la chaîne <strong>Session pooler</strong>. La chaîne est saisie sans affichage, pour que le mot de passe de la base n’apparaisse ni à l’écran ni dans l’historique du terminal :</p>
+  <pre class="cmd"><span class="p">$ </span>npm --prefix server ci                    <span class="c"># installe les dépendances (dont tsx)</span>
+<span class="p">$ </span>printf 'Chaîne Session pooler : '; read -rs DATABASE_URL; echo; export DATABASE_URL
+<span class="p">$ </span>npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com
+<span class="c">  Base de données : aws-0-eu-west-3.pooler.supabase.com:5432/postgres</span>
+<span class="c">  Créer l’administrateur dans cette base ? (o/N) o</span>
+<span class="c">  Mot de passe (10 caractères min.) :     ← saisi sans affichage</span>
+<span class="p">$ </span>unset DATABASE_URL</pre>
+  <p>Le script affiche la base visée avant toute écriture : si la ligne indique « base locale », <code>DATABASE_URL</code> n’est pas définie dans ce terminal ; répondez <code>N</code>.</p>
   <div class="callout warn"><b class="t">Jamais « npm run setup » ni « db:seed » sur la base Supabase</b><p>Ces commandes chargent les données de démonstration et <strong>effacent toutes les données</strong>.</p></div>
 
   <h2 id="t-65"><span class="n">6.5</span>Fonctionnement du build</h2>
