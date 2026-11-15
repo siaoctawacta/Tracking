@@ -25,17 +25,28 @@ function hiddenPrompt() {
   const waiting: ((l: string) => void)[] = []
   rl.on('line', (l) => { const w = waiting.shift(); if (w) w(l); else lines.push(l) })
   return {
-    ask(question: string) {
+    ask(question: string, hidden = true) {
       muted = false
       process.stdout.write(question)
-      muted = true
+      muted = hidden
       return new Promise<string>((resolve) => {
         const ready = lines.shift()
-        if (ready !== undefined) { process.stdout.write('\n'); resolve(ready) }
-        else waiting.push((l) => { process.stdout.write('\n'); resolve(l) })
+        if (ready !== undefined) { if (hidden) process.stdout.write('\n'); resolve(ready) }
+        else waiting.push((l) => { if (hidden) process.stdout.write('\n'); resolve(l) })
       })
     },
     close: () => rl.close(),
+  }
+}
+
+function describeDatabase(url: string | undefined): string {
+  if (!url) return 'base locale par défaut (localhost:5432/kader_cargo) — DATABASE_URL non définie'
+  try {
+    const u = new URL(url)
+    const local = /^(localhost|127\.0\.0\.1|::1)$/.test(u.hostname)
+    return `${u.hostname}:${u.port || '5432'}${u.pathname}${local ? ' (base locale)' : ''}`
+  } catch {
+    return 'DATABASE_URL illisible : vérifiez la chaîne de connexion'
   }
 }
 
@@ -47,9 +58,15 @@ async function main() {
     console.error('Usage: npm run create-admin -- --name "Nom" --email admin@exemple.com [--phone "+228 …"]')
     process.exit(1)
   }
+  // Show which database is targeted (never the password) so a missing DATABASE_URL
+  // does not silently create the admin in the local development database.
+  const target = describeDatabase(process.env.DATABASE_URL)
+  console.log(`Base de données : ${target}`)
   let password = process.env.ADMIN_PASSWORD ?? ''
   if (!password) {
     const prompt = hiddenPrompt()
+    const ok = await prompt.ask('Créer l’administrateur dans cette base ? (o/N) ', false)
+    if (!/^(o|oui|y|yes)$/i.test(ok.trim())) { prompt.close(); console.log('Annulé.'); return }
     password = await prompt.ask('Mot de passe (10 caractères min.) : ')
     const again = await prompt.ask('Confirmez le mot de passe : ')
     prompt.close()

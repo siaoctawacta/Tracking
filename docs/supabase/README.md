@@ -38,7 +38,17 @@ Ce fichier est généré : après une nouvelle migration, régénérez-le avec `
 Créez le premier administrateur depuis un poste (aucune donnée de démo) :
 
 ```bash
-DATABASE_URL="<chaîne Session pooler>" npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com
+npm --prefix server ci
 ```
+
+```bash
+printf 'Chaîne Session pooler : '; read -rs DATABASE_URL; echo; export DATABASE_URL
+```
+
+```bash
+npm --prefix server run create-admin -- --name "Kader" --email admin@kadercargo.com
+```
+
+Le script affiche la base visée (`…pooler.supabase.com…`) et demande confirmation avant d'écrire. S'il indique « base locale », `DATABASE_URL` n'est pas définie : répondez `N`.
 
 Ne lancez **jamais** `npm run setup` ni `npm --prefix server run db:seed` sur la base de production : ces commandes effacent les données.
