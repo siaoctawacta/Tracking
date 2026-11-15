@@ -15,5 +15,8 @@
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "concurrently": "^10.0.7",
     "opentype.js": "^2.0.0"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.9.2"
   }
 }
