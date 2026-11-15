@@ -18,6 +18,17 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Error for a response that is not the expected JSON: the API's own error when it sent one,
+ * otherwise a message saying the server (not the visitor's network) is at fault.
+ */
+function serverError(status: number, body: { error?: { code?: string; message?: string; fields?: ApiError['fields'] } } | null): ApiError {
+  if (body?.error?.message) return new ApiError(status, body.error.code ?? 'error', body.error.message, body.error.fields)
+  return status >= 500 || status === 0
+    ? new ApiError(status, 'server_error', `Le serveur ne répond pas correctement (erreur ${status}). Réessayez dans quelques instants.`)
+    : new ApiError(status, 'bad_response', 'Réponse inattendue du serveur : l’API n’est pas joignable à cette adresse.')
+}
+
 let csrfToken: string | null = null
 let csrfPromise: Promise<string> | null = null
 let refreshPromise: Promise<boolean> | null = null
@@ -25,8 +36,11 @@ let refreshPromise: Promise<boolean> | null = null
 async function getCsrf(force = false): Promise<string> {
   if (csrfToken && !force) return csrfToken
   csrfPromise ??= fetch(`${BASE}/auth/csrf`, { credentials: 'include' })
-    .then((r) => r.json())
-    .then((b) => (csrfToken = b.csrfToken as string))
+    .then(async (r) => {
+      const b = await r.json().catch(() => null)
+      if (!r.ok || typeof b?.csrfToken !== 'string') throw serverError(r.status, b)
+      return (csrfToken = b.csrfToken as string)
+    })
     .finally(() => (csrfPromise = null))
   return csrfPromise
 }
@@ -70,6 +84,7 @@ async function request(method: string, path: string, body?: unknown, retry = tru
   }
   if (!res.ok) {
     const b = await res.json().catch(() => null)
+    if (!b?.error?.message && res.status >= 500) throw serverError(res.status, b)
     throw new ApiError(res.status, b?.error?.code ?? 'error', b?.error?.message ?? 'Une erreur est survenue', b?.error?.fields)
   }
   return res
@@ -77,7 +92,12 @@ async function request(method: string, path: string, body?: unknown, retry = tru
 
 async function json<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await request(method, path, body)
-  return res.status === 204 ? (undefined as T) : ((await res.json()) as T)
+  if (res.status === 204) return undefined as T
+  try {
+    return (await res.json()) as T
+  } catch {
+    throw serverError(res.status, null) // e.g. an HTML page where the API was expected
+  }
 }
 
 export const api = {

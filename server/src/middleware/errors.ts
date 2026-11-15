@@ -1,6 +1,7 @@
 import type { ErrorRequestHandler, RequestHandler } from 'express'
 import { ZodError } from 'zod'
 import multer from 'multer'
+import { diagnoseDbError, isDbUnavailable } from '../lib/dbErrors'
 
 export class HttpError extends Error {
   constructor(public status: number, message: string, public code = 'error') {
@@ -33,6 +34,10 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
   if (err?.type === 'entity.parse.failed') {
     return res.status(400).json({ error: { code: 'bad_json', message: 'JSON invalide' } })
+  }
+  if (isDbUnavailable(err)) {
+    console.error(`[db] ${diagnoseDbError(err)}`, err)
+    return res.status(503).json({ error: { code: 'database_unavailable', message: 'Service momentanément indisponible. Réessayez dans quelques instants.' } })
   }
   // Never leak internals (stack traces, SQL) to clients.
   console.error(err)
