@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { ConfigError } from './lib/configError'
 
 const env = process.env
 
@@ -7,7 +8,7 @@ function parseJson<T>(raw: string | undefined): T | null {
   try {
     return JSON.parse(raw) as T
   } catch {
-    throw new Error('Invalid JSON in environment variable')
+    throw new ConfigError('Une variable d’environnement attendue au format JSON est invalide')
   }
 }
 // On Vercel (production and preview deployments) the strict production settings always apply.
@@ -17,7 +18,7 @@ const isTest = env.NODE_ENV === 'test' || !!env.VITEST
 function jwtSecret(): string {
   const s = env.JWT_SECRET ?? ''
   if (s.length >= 32 && !s.startsWith('change-me')) return s
-  if (isProd) throw new Error('JWT_SECRET must be set to a strong random value (>= 32 chars) in production')
+  if (isProd) throw new ConfigError(s ? `JWT_SECRET trop courte (${s.length} caractères) : il faut une valeur aléatoire d’au moins 32 caractères` : 'JWT_SECRET absente : ajoutez-la dans les variables d’environnement (valeur aléatoire d’au moins 32 caractères)')
   if (!isTest) console.warn('[config] JWT_SECRET missing/weak — using an ephemeral random secret (dev only)')
   return crypto.randomBytes(48).toString('base64url')
 }

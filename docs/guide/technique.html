@@ -50,7 +50,7 @@
       <tr><td>Fichiers / PDF</td><td>multer 2, pdfkit, bwip-js (code-barres, QR)</td></tr>
       <tr><td>E-mail</td><td>nodemailer (SMTP)</td></tr>
       <tr><td>Hébergement</td><td>Vercel (Build Output API, esbuild + @vercel/nft), @vercel/functions</td></tr>
-      <tr><td>Tests</td><td>vitest 5, supertest — 47 tests</td></tr>
+      <tr><td>Tests</td><td>vitest 5, supertest — 55 tests</td></tr>
     </table>
     <table>
       <thead><tr><th colspan="2">Site — <code style="background:none;color:#fff">web/</code></th></tr></thead>
@@ -156,12 +156,13 @@
   </table>
 
   <h2 id="t-23"><span class="n">2.3</span>Tests</h2>
-  <p>47 tests d’intégration (vitest + supertest) sur une base PostgreSQL de test (<code>kader_cargo_test</code>, vidée et recréée à chaque lancement ; autre base via <code>TEST_DATABASE_URL</code>, dont le nom doit contenir « test »), dans <code>server/test/</code> :</p>
+  <p>55 tests d’intégration (vitest + supertest) sur une base PostgreSQL de test (<code>kader_cargo_test</code>, vidée et recréée à chaque lancement ; autre base via <code>TEST_DATABASE_URL</code>, dont le nom doit contenir « test »), dans <code>server/test/</code> :</p>
   <ul>
     <li><code>api.test.ts</code> — hachage Argon2id, CSRF, erreur identique utilisateur inconnu / mauvais mot de passe, limitation de connexion, drapeaux des cookies, rotation et réutilisation du refresh token, JWT falsifié, masquage du suivi public, droits par rôle, accès client limité à ses colis, fichiers non-images refusés, flux des lots, création de comptes.</li>
     <li><code>signup.test.ts</code> — inscription par téléphone et par e-mail, codes faux / verrouillage / délai de renvoi, non-divulgation des comptes existants, comptes en attente ou refusés bloqués, validation, liaison téléphone / e-mail / Google / mot de passe, connexion Google (jeton signé localement), flux de notifications et destinataires.</li>
     <li><code>whatsapp.test.ts</code> — rédaction des 6 messages, variables de modèles, une alerte par étape, aucune alerte en correction arrière, aperçu et renvoi, envoi Twilio et Meta contre un réseau simulé, enregistrement des erreurs.</li>
     <li><code>platform.test.ts</code> — compteurs de limitation partagés entre instances, envoi des photos vers Supabase Storage (bucket privé, clé de service, contrôle d’accès avant lecture), route de maintenance protégée et purge.</li>
+    <li><code>startup.test.ts</code> — démarrage de la fonction Vercel dans un processus séparé : variable manquante ou illisible signalée en JSON sans révéler de secret, diagnostic de la base (<code>/health?db=1</code>).</li>
   </ul>
 
   <h2 id="t-24"><span class="n">2.4</span>Conventions</h2>
@@ -211,7 +212,7 @@
   <h2 id="t-33"><span class="n">3.3</span>Authentification et compte</h2>
   <table>
     <thead><tr><th style="width:12%">Méthode</th><th style="width:36%">Route</th><th style="width:16%">Accès</th><th>Description</th></tr></thead>
-    <tr><td><span class="method m-get">GET</span></td><td class="path">/health</td><td class="acc">Public</td><td>Sonde de supervision : <code>{"ok":true}</code></td></tr>
+    <tr><td><span class="method m-get">GET</span></td><td class="path">/health</td><td class="acc">Public</td><td>Sonde de supervision : <code>{"ok":true}</code> ; avec <code>?db=1</code>, vérifie aussi la base et donne la cause d’une panne</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/cron/maintenance</td><td class="acc">Bearer CRON_SECRET</td><td>Tâche quotidienne : relance des alertes bloquées, purge (codes, sessions, compteurs)</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/csrf</td><td class="acc">Public</td><td>Émet le jeton CSRF</td></tr>
     <tr><td><span class="method m-get">GET</span></td><td class="path">/auth/options</td><td class="acc">Public</td><td>Options de connexion actives (ID client Google)</td></tr>
@@ -449,7 +450,7 @@
     <li><strong>Settings → Environment Variables</strong>, environnement <strong>Production</strong> : les variables du tableau ci-dessous.</li>
     <li>Déployez (ou poussez sur <code>main</code>). Les migrations de la base sont appliquées automatiquement pendant le build des déploiements de production : <strong>aucune table n’est à créer à la main</strong>. Dans Supabase, <strong>Table Editor</strong> doit ensuite afficher 11 tables : <code>User</code>, <code>RefreshToken</code>, <code>OtpCode</code>, <code>StaffNotification</code>, <code>Container</code>, <code>Shipment</code>, <code>ShipmentEvent</code>, <code>Photo</code>, <code>Notification</code>, <code>RateLimit</code> et <code>_prisma_migrations</code>. En secours seulement, sur une base vide : coller <code>docs/supabase/schema.sql</code> dans le <strong>SQL Editor</strong>.</li>
     <li><strong>Settings → Domains</strong> : ajoutez <code>kadercargo.com</code> et suivez les instructions DNS de Vercel ; mettez ensuite <code>PUBLIC_WEB_URL</code> à jour.</li>
-    <li>Vérifiez <code>https://kadercargo.com/api/v1/health</code> → <code>{"ok":true}</code>, puis créez le premier administrateur (6.4).</li>
+    <li>Vérifiez <code>https://kadercargo.com/api/v1/health?db=1</code> → <code>{"ok":true,"database":"ok","storage":"supabase"}</code>, puis créez le premier administrateur (6.4).</li>
   </ol>
   <table>
     <thead><tr><th style="width:34%">Variable (Production)</th><th>Valeur</th></tr></thead>
@@ -533,7 +534,9 @@
     <thead><tr><th style="width:32%">Symptôme</th><th>Cause probable et action</th></tr></thead>
     <tr><td>Build : échec pendant « Migrations »</td><td><code>DIRECT_URL</code> absente ou erronée ; utilisez la chaîne <em>Session pooler</em> (la connexion directe de Supabase n’est pas joignable depuis toutes les plateformes).</td></tr>
     <tr><td>API : « self-signed certificate »</td><td><code>DATABASE_SSL=verify</code> sans le bon <code>DATABASE_CA_CERT</code> : recopiez le certificat CA de Supabase, ou repassez en <code>require</code>.</td></tr>
-    <tr><td>API : erreur 500 au démarrage</td><td>Variable manquante (<code>JWT_SECRET</code>, <code>DATABASE_URL</code>) : voir les journaux Vercel.</td></tr>
+    <tr><td>Connexion : « Configuration du serveur incomplète… »</td><td>La fonction n’a pas pu démarrer ; le message nomme la variable en cause (<code>JWT_SECRET</code> absente ou trop courte, <code>DATABASE_URL</code> illisible…). Corrigez-la dans Vercel, environnement <em>Production</em>, puis <strong>Redeploy</strong> : une variable modifiée ne s’applique qu’au déploiement suivant.</td></tr>
+    <tr><td>Connexion : « Service momentanément indisponible »</td><td>La base ne répond pas. Ouvrez <code>/api/v1/health?db=1</code> : le champ <code>database</code> donne la cause (mot de passe refusé, base injoignable, utilisateur du pooler inconnu, tables absentes) sans révéler de secret.</td></tr>
+    <tr><td>Connexion : « Réponse inattendue du serveur »</td><td>Une page HTML a répondu à la place de l’API : réglages du projet Vercel modifiés (Root Directory, Framework, Build Command) ; ils doivent rester vides, tout est dans <code>vercel.json</code>.</td></tr>
     <tr><td>Photos : échec d’envoi</td><td><code>SUPABASE_URL</code> / clé erronées ou bucket <code>photos</code> absent ; message détaillé dans les journaux.</td></tr>
     <tr><td>Photo refusée (413)</td><td>Fichier non compressé de plus de 4,5 Mo envoyé hors du site.</td></tr>
     <tr><td>Alertes « Simulé »</td><td>Aucun fournisseur WhatsApp configuré.</td></tr>

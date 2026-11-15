@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import { config } from './config'
 import { authenticate, requireRole } from './middleware/auth'
 import { csrfProtection } from './middleware/csrf'
+import { checkDatabase } from './lib/dbHealth'
 import { errorHandler, notFound } from './middleware/errors'
 import { accountRouter } from './routes/account'
 import { authRouter } from './routes/auth'
@@ -38,7 +39,16 @@ export function createApp() {
   app.use(cookieParser())
 
   const api = express.Router()
-  api.get('/health', (_req, res) => res.json({ ok: true }))
+  api.get('/health', async (req, res) => {
+    // ?db=1 also checks the database (used to diagnose a deployment); the plain probe stays instant.
+    if (req.query.db === undefined) return res.json({ ok: true })
+    const database = await checkDatabase()
+    res.status(database.ok ? 200 : 503).json({
+      ok: database.ok,
+      database: database.ok ? 'ok' : database.reason,
+      storage: config.supabase.url && config.supabase.serviceRoleKey ? 'supabase' : 'disque local',
+    })
+  })
   api.use('/cron', cronRouter)
   api.use(csrfProtection)
   api.use('/auth', authRouter)

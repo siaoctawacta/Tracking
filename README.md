@@ -20,7 +20,7 @@ Prérequis : Node.js ≥ 22 et PostgreSQL (le plus simple : Docker).
 docker compose up -d   # PostgreSQL local : bases kader_cargo (dev) et kader_cargo_test (tests)
 npm run setup   # installe server + web, crée server/.env (secret JWT aléatoire), migrations + données de démo
 npm run dev     # installe les dépendances manquantes, applique les migrations, puis API :4000 + SPA http://localhost:5173
-npm test        # 47 tests d'intégration de l'API (auth, inscription/OTP, Google, RBAC, CSRF, workflow, alertes, Supabase)
+npm test        # 55 tests d'intégration de l'API (auth, inscription/OTP, Google, RBAC, CSRF, workflow, alertes, Supabase, démarrage Vercel)
 ```
 
 Après un `git pull`, relancez simplement `npm run dev` : les nouvelles dépendances et migrations sont installées automatiquement (`npm run sync`).

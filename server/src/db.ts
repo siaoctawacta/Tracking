@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg'
 import type { PoolConfig } from 'pg'
 import { PrismaClient } from './generated/prisma/client'
+import { ConfigError } from './lib/configError'
 
 /**
  * PostgreSQL connection (Supabase in production).
@@ -13,7 +14,15 @@ import { PrismaClient } from './generated/prisma/client'
  */
 function poolConfig(): PoolConfig {
   const raw = process.env.DATABASE_URL ?? 'postgresql://kader:kader@localhost:5432/kader_cargo'
-  const url = new URL(raw)
+  const unreadable = new ConfigError('DATABASE_URL illisible : copiez la chaîne de Supabase telle quelle ; si le mot de passe contient des caractères spéciaux (@ # / ? : %), encodez-les ou choisissez un mot de passe sans ces caractères')
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    throw unreadable
+  }
+  // A raw "#" in the password silently cuts the string: the rest would be taken for a fragment.
+  if (url.hash) throw unreadable
   url.searchParams.delete('sslmode')
   url.searchParams.delete('pgbouncer')
   const isSupabase = /supabase\.(co|com)$/.test(url.hostname)
@@ -21,7 +30,7 @@ function poolConfig(): PoolConfig {
   const ca = process.env.DATABASE_CA_CERT?.replace(/\\n/g, '\n')
   let ssl: PoolConfig['ssl'] = false
   if (mode === 'verify') {
-    if (!ca) throw new Error('DATABASE_SSL=verify requires DATABASE_CA_CERT (Supabase CA certificate, PEM)')
+    if (!ca) throw new ConfigError('DATABASE_SSL=verify exige DATABASE_CA_CERT (certificat CA de Supabase, format PEM)')
     ssl = { ca, rejectUnauthorized: true }
   } else if (mode === 'require') {
     ssl = { rejectUnauthorized: false }
